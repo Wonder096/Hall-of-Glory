@@ -139,6 +139,13 @@ function loadCurrentTab() {
   } else {
     window.__state = getDefaultState(mode);
   }
+  
+  const btnPinball = $("#btnAppPinball");
+  if(btnPinball) {
+      if(mode === "civil") btnPinball.classList.remove("hidden");
+      else btnPinball.classList.add("hidden");
+  }
+
   renderTabs();
   render();
 }
@@ -986,6 +993,8 @@ function copyReceiptText() {
     txt += `🔴 RED TEAM : ${redTotal}점 ${redTotal > blueTotal ? "👑" : ""}\n`;
     txt += `🔵 BLUE TEAM : ${blueTotal}점 ${blueTotal > redTotal ? "👑" : ""}\n\n`;
     txt += `[ 개인 점수 ]\n`;
+  } else {
+    txt += `[ 개인전 점수 ]\n`;
   }
 
   rows.forEach((r, i) => {
@@ -1320,6 +1329,7 @@ function bind(){
 
   click("#btnLandingSettings", () => { if(checkAdminAuth()) openSettingsModal(); });
   click("#btnLandingPinball", () => { if(checkAdminAuth()) openPinballModal(); });
+  click("#btnAppPinball", () => { if(checkAdminAuth()) openPinballModal(); });
   
   click("#themeToggle", ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
@@ -1355,12 +1365,12 @@ function bind(){
   click("#closeProfile", () => $("#profileModal").classList.add("hidden"));
 
   click("#openSettings", openSettingsModal);
-  click("#closeSettingsBtn", () => $("#settingsModal").classList.add("hidden");
+  click("#closeSettingsBtn", () => $("#settingsModal").classList.add("hidden"));
   click("#saveSettingsBtn", saveSettingsAction);
 
   click("#runPinballBtn", runPinballAction);
   click("#closePinballBtn1", () => { if(pinballAnimId) cancelAnimationFrame(pinballAnimId); $("#pinballModal").classList.add("hidden"); });
-  click("#closePinballBtn2", () => $("#pinballModal").classList.add("hidden"););
+  click("#closePinballBtn2", () => $("#pinballModal").classList.add("hidden"));
   click("#applyPinballBtn", applyPinballResult);
   click("#copyPinballBtn", copyPinballResult);
 }
@@ -1371,7 +1381,7 @@ window.onload = function() {
     bind();
     initTabs();
   } catch(e) {
-    console.error("앱 초기화 에러", e);
+    console.error("앱 초기화 중 오류가 발생했습니다.", e);
     const lv = document.getElementById("landingView");
     if(lv) lv.classList.remove("hidden");
   }
