@@ -8,7 +8,7 @@
 </head>
 <body>
   
-  <div id="landingView" class="landing-wrap hidden">
+  <div id="landingView" class="landing-wrap">
     <div class="landing-content">
       <h1 class="landing-title">테일즈런너 점령&amp;내전 점수 계산기</h1>
       <h2 class="landing-subtitle">Hall of Glory</h2>
@@ -161,7 +161,6 @@
     <div class="modal-overlay"></div>
     <div class="modal-box" style="max-width:520px; padding:0; overflow:hidden;">
       
-      <!-- 핀볼 이름 입력 화면 -->
       <div id="pinballInputArea" style="padding:30px;">
         <h2 style="margin:0 0 16px 0;">🎲 내전 핀볼 (팀 섞기)</h2>
         <p style="margin-top:0; font-size:13px; color:var(--muted);">참여할 8명의 닉네임을 쉼표(,) 또는 줄바꿈으로 입력하세요.</p>
@@ -175,13 +174,11 @@
         </div>
       </div>
 
-      <!-- 핀볼 애니메이션 캔버스 -->
       <div id="pbCanvasWrap" style="display:none; background:#0f172a; padding:30px 20px 20px 20px;">
         <h3 style="text-align:center; color:#fff; font-size:18px; margin:0 0 16px 0; font-weight:800;">운명의 배정 중... 🎲</h3>
         <canvas id="pbCanvas" style="width:100%; height:400px; display:block; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--bg-card);"></canvas>
       </div>
 
-      <!-- 핀볼 배정 결과 화면 -->
       <div id="pinballResultArea" style="display:none; padding:30px;">
         <h2 style="text-align:center; margin:0 0 24px 0; color:var(--accent);">🎉 팀 배정 완료!</h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
