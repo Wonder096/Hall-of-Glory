@@ -200,6 +200,10 @@ body {
   backdrop-filter: blur(8px);
 }
 
+.landing-wrap.hidden {
+  display: none !important;
+}
+
 .landing-content {
   text-align: center;
   background-color: var(--bg-card);
