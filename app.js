@@ -5,19 +5,41 @@ const TABS_KEY = "tr_tabs_v2";
 const ACTIVE_TAB_KEY = "tr_active_tab_v2";
 const STATE_PREFIX = "tr_state_v2_";
 
-const SETTINGS = {
+const DEFAULT_SETTINGS = {
   totalGames: 30,
   maxPerGame: 1044,
-  goalPoints: {1:288,2:270,3:252,4:234,5:216,6:198,7:180,8:162},
-  retaPoints: {1:144,2:135,3:126,4:116,5:108,6:99,7:90,8:81},
+  goalPoints: {1:288, 2:270, 3:252, 4:234, 5:216, 6:198, 7:180, 8:162},
+  retaPoints: {1:144, 2:135, 3:126, 4:116, 5:108, 6:99, 7:90, 8:81},
   xPoints: 0
 };
+
+let SETTINGS = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 
 const $ = (s)=>document.querySelector(s);
 const $$ = (s)=>Array.from(document.querySelectorAll(s));
 
 let tabs = [];
 let activeTabId = null;
+
+function loadCustomSettings() {
+  const custom = localStorage.getItem("tr_custom_settings_v1");
+  if(custom) {
+    try {
+      const parsed = JSON.parse(custom);
+      SETTINGS.goalPoints = parsed.goalPoints || SETTINGS.goalPoints;
+      SETTINGS.retaPoints = parsed.retaPoints || SETTINGS.retaPoints;
+      SETTINGS.xPoints = parsed.xPoints !== undefined ? parsed.xPoints : SETTINGS.xPoints;
+    } catch(e) {}
+  }
+}
+
+function saveCustomSettings(newSet) {
+  localStorage.setItem("tr_custom_settings_v1", JSON.stringify(newSet));
+  loadCustomSettings();
+  if(window.__state && window.__state.history.length > 0) {
+    recalculateHistory();
+  }
+}
 
 function getModeConfig(mode) {
   if(mode === "civil") return { rosterSize: 8, isTeam: true };
@@ -31,21 +53,17 @@ function getDefaultState(mode) {
 }
 
 function initTabs() {
+  loadCustomSettings();
   let savedTabs;
   try {
     savedTabs = JSON.parse(localStorage.getItem(TABS_KEY));
     if(!Array.isArray(savedTabs)) savedTabs = null;
-  } catch(e) {
-    savedTabs = null;
-  }
+  } catch(e) { savedTabs = null; }
 
   if (savedTabs && savedTabs.length > 0) {
     tabs = savedTabs;
     activeTabId = localStorage.getItem(ACTIVE_TAB_KEY);
-    
-    if(!tabs.find(t => t.id === activeTabId)) {
-      activeTabId = null;
-    }
+    if(!tabs.find(t => t.id === activeTabId)) activeTabId = null;
 
     if (activeTabId) {
       showApp();
@@ -91,11 +109,8 @@ function createTab(mode) {
 
 function saveTabs() {
   localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
-  if(activeTabId) {
-    localStorage.setItem(ACTIVE_TAB_KEY, activeTabId);
-  } else {
-    localStorage.removeItem(ACTIVE_TAB_KEY);
-  }
+  if(activeTabId) localStorage.setItem(ACTIVE_TAB_KEY, activeTabId);
+  else localStorage.removeItem(ACTIVE_TAB_KEY);
 }
 
 function loadCurrentTab() {
@@ -125,9 +140,7 @@ function loadCurrentTab() {
 }
 
 function saveCurrentTab() {
-  if(activeTabId) {
-    localStorage.setItem(STATE_PREFIX + activeTabId, JSON.stringify(window.__state));
-  }
+  if(activeTabId) localStorage.setItem(STATE_PREFIX + activeTabId, JSON.stringify(window.__state));
 }
 
 function save(state) {
@@ -181,19 +194,10 @@ function renderTabs() {
       if (confirm(`'${tab.name}' 탭을 정말 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
         localStorage.removeItem(STATE_PREFIX + tab.id);
         tabs = tabs.filter(t => t.id !== tab.id);
-        
-        if (activeTabId === tab.id) {
-          activeTabId = tabs.length > 0 ? tabs[0].id : null;
-        }
-        
+        if (activeTabId === tab.id) activeTabId = tabs.length > 0 ? tabs[0].id : null;
         saveTabs();
-        if(activeTabId) {
-          showApp();
-          loadCurrentTab();
-        } else {
-          renderTabs();
-          showLanding();
-        }
+        if(activeTabId) { showApp(); loadCurrentTab(); } 
+        else { renderTabs(); showLanding(); }
       }
     };
     
@@ -229,8 +233,6 @@ function setTheme(theme){
   const t = theme === "light" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", t);
   localStorage.setItem(THEME_KEY, t);
-  const btn = $("#themeToggle");
-  if(btn) btn.textContent = `다크모드: ${t === "dark" ? "ON" : "OFF"}`;
 }
 
 function initTheme(){
@@ -378,13 +380,7 @@ function computePerPlayerStats(state, perTags){
     const avgRank = validRanks > 0 ? (totalRank / validRanks).toFixed(1) : 0;
     
     out[name] = { 
-      bestRank, 
-      bestCount, 
-      goalCount, 
-      reCount, 
-      xCount, 
-      avgRank,
-      rawHistory,
+      bestRank, bestCount, goalCount, reCount, xCount, avgRank, rawHistory,
       summary: summarizeRanksFull(tags) 
     };
   }
@@ -400,7 +396,6 @@ window.showPlayerProfile = function(name) {
 
   const score = safeInt(state.totals[name], 0);
   const names = normalizeNames(state);
-  const isTeam = getModeConfig(state.mode).isTeam;
   const isMvp = names.reduce((max, n) => Math.max(max, safeInt(state.totals[n], 0)), 0) === score;
   
   let recentHTML = "";
@@ -675,14 +670,7 @@ function render(){
 
               const linesData = state.players.map((p, pIdx) => {
                 const parsed = h.parsed[pIdx];
-                return {
-                  p,
-                  pIdx,
-                  rank: parsed.rank,
-                  re: parsed.re,
-                  x: parsed.x,
-                  delta: h.delta[p]
-                };
+                return { p, pIdx, rank: parsed.rank, re: parsed.re, x: parsed.x, delta: h.delta[p] };
               });
 
               linesData.sort((a, b) => a.rank - b.rank);
@@ -850,16 +838,30 @@ window.deleteRound = function(idx) {
   const state = window.__state;
   if(!confirm(`${idx+1}판 기록을 삭제하시겠습니까?`)) return;
   state.history.splice(idx, 1);
-  
+  recalculateHistory();
+};
+
+function recalculateHistory() {
+  const state = window.__state;
+  const conf = getModeConfig(state.mode);
   const newTotals = {};
   for(const n of state.players) newTotals[n] = 0;
+  
   for(const row of state.history){
-    for(const n of state.players){ newTotals[n] += safeInt(row.delta[n], 0); }
+    const newDelta = {};
+    for(let i=0; i<conf.rosterSize; i++){
+      const name = state.players[i];
+      const p = row.parsed[i];
+      const s = scoreFrom(p);
+      newDelta[name] = s;
+      newTotals[name] += s;
+    }
+    row.delta = newDelta;
   }
   state.totals = newTotals;
   save(state);
   render();
-};
+}
 
 function resetAll(){
   if(!confirm("현재 점수판의 모든 데이터를 초기화하시겠습니까?")) return;
@@ -942,7 +944,7 @@ function buildReceiptHTML(state, perStats, names, conf) {
         <div class="r-subtitle">${currentTabName} · ${dateStr}</div>
       </div>
       ${contentHTML}
-      <div class="receipt-footer">Generated by Hall of Glory · 제작: 단졍(Xesi)</div>
+      <div class="receipt-footer">Generated by Hall of Glory · 제작: 단졍</div>
     </div>
   `;
 }
@@ -1077,12 +1079,70 @@ function handleImportFile(file){
   reader.readAsText(file, "utf-8");
 }
 
+function checkAdminAuth() {
+  const pwd = prompt("임시 비밀번호를 입력해주세요.");
+  if(pwd === "0814") return true;
+  if(pwd !== null) alert("비밀번호가 일치하지 않습니다.");
+  return false;
+}
+
+function openSettingsModal() {
+  const tb = $("#setTbody");
+  tb.innerHTML = "";
+  for(let i=1; i<=8; i++) {
+    tb.innerHTML += `
+      <tr>
+        <td style="text-align:center; font-weight:bold;">${i}등</td>
+        <td><input type="number" id="setG_${i}" value="${SETTINGS.goalPoints[i]}" class="set-inp" /></td>
+        <td><input type="number" id="setR_${i}" value="${SETTINGS.retaPoints[i]}" class="set-inp" /></td>
+      </tr>
+    `;
+  }
+  $("#setXPoints").value = SETTINGS.xPoints;
+  $("#settingsModal").classList.remove("hidden");
+}
+
+function saveSettingsAction() {
+  const newSet = { goalPoints:{}, retaPoints:{}, xPoints:0 };
+  for(let i=1; i<=8; i++) {
+    newSet.goalPoints[i] = safeInt($(`#setG_${i}`).value, 0);
+    newSet.retaPoints[i] = safeInt($(`#setR_${i}`).value, 0);
+  }
+  newSet.xPoints = safeInt($("#setXPoints").value, 0);
+  saveCustomSettings(newSet);
+  alert("설정이 저장되었으며, 기존 기록이 새 점수에 맞게 재계산되었습니다.");
+  $("#settingsModal").classList.add("hidden");
+}
+
+function openPinballModal() {
+  $("#pinballInput").value = "";
+  $("#pinballResultArea").style.display = "none";
+  $("#pinballModal").classList.remove("hidden");
+}
+
+function runPinballAction() {
+  const text = $("#pinballInput").value;
+  const names = text.split(/,|\n/).map(s=>s.trim()).filter(Boolean);
+  if(names.length !== 8) return alert(`정확히 8명의 닉네임을 입력해주세요. (현재 ${names.length}명)`);
+  
+  const shuffled = names.sort(() => Math.random() - 0.5);
+  const red = shuffled.slice(0,4);
+  const blue = shuffled.slice(4,8);
+  
+  $("#pbRed").innerHTML = red.join("<br>");
+  $("#pbBlue").innerHTML = blue.join("<br>");
+  $("#pinballResultArea").style.display = "block";
+}
+
 function bind(){
   const btnOcc = $("#btnOccMode");
   const btnCivil = $("#btnCivilMode");
   if(btnOcc) btnOcc.onclick = () => createTab("occ");
   if(btnCivil) btnCivil.onclick = () => createTab("civil");
 
+  $("#btnLandingSettings").onclick = () => { if(checkAdminAuth()) openSettingsModal(); };
+  $("#btnLandingPinball").onclick = () => { if(checkAdminAuth()) openPinballModal(); };
+  
   $("#themeToggle").onclick = ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     setTheme(cur === "dark" ? "light" : "dark");
@@ -1104,8 +1164,8 @@ function bind(){
     handleImportFile(f);
   });
 
-  const openTerms = $("#openTerms");
-  const closeTerms = $("#closeTerms");
+  const openTerms = $("#openTermsBtn");
+  const closeTerms = $("#closeTermsBtn");
   const termsModal = $("#termsModal");
   if(openTerms) openTerms.onclick = (e) => { e.preventDefault(); termsModal.classList.remove("hidden"); };
   if(closeTerms) closeTerms.onclick = () => termsModal.classList.add("hidden");
@@ -1114,6 +1174,13 @@ function bind(){
   $("#btnExportImage").onclick = exportReceiptImage;
   $("#btnCopyText").onclick = copyReceiptText;
   $("#closeProfile").onclick = () => $("#profileModal").classList.add("hidden");
+
+  $("#openSettings").onclick = openSettingsModal;
+  $("#closeSettingsBtn").onclick = () => $("#settingsModal").classList.add("hidden");
+  $("#saveSettingsBtn").onclick = saveSettingsAction;
+
+  $("#runPinballBtn").onclick = runPinballAction;
+  $("#closePinballBtn").onclick = () => $("#pinballModal").classList.add("hidden");
 }
 
 function init(){
