@@ -969,6 +969,24 @@ function settle(){
   $("#resultModal").classList.remove("hidden");
 }
 
+function fallbackCopyTextToClipboard(text) {
+  var textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.top = "0";
+  textArea.style.left = "0";
+  textArea.style.position = "fixed";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    alert("결과가 클립보드에 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
+  } catch (err) {
+    alert("복사에 실패했습니다.");
+  }
+  document.body.removeChild(textArea);
+}
+
 function copyReceiptText() {
   const state = window.__state;
   const conf = getModeConfig(state.mode);
@@ -1001,11 +1019,13 @@ function copyReceiptText() {
     txt += `${i+1}위. ${teamMarker}${r.name} (${r.score}점)${mvp}\n`;
   });
 
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(txt);
+    return;
+  }
   navigator.clipboard.writeText(txt).then(() => {
-    alert("결과가 클립보드에 복사되었습니다!\n디스코드나 카카오톡에 붙여넣기(Ctrl+V) 해보세요.");
-  }).catch(() => {
-    alert("복사에 실패했습니다. 브라우저 설정을 확인해주세요.");
-  });
+    alert("결과가 클립보드에 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
+  }).catch(() => fallbackCopyTextToClipboard(txt));
 }
 
 function exportReceiptImage() {
@@ -1130,13 +1150,15 @@ function openPinballModal() {
 }
 
 let pinballAnimId = null;
+let pinballSpeed = 1;
+let pinballSkip = false;
 
 function runPinballAction() {
   const text = $("#pinballInput").value;
   const names = text.split(/,|\n/).map(s=>s.trim()).filter(Boolean);
   if(names.length !== 8) return alert(`정확히 8명의 닉네임을 입력해주세요. (현재 ${names.length}명)`);
   
-  // 피셔-예이츠 셔플 알고리즘 (진짜 랜덤 섞기)
+  // 피셔-예이츠 셔플로 진짜 랜덤 섞기
   const shuffled = [...names];
   for(let i = shuffled.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -1158,41 +1180,49 @@ function runPinballAction() {
   cvs.width = cw;
   cvs.height = ch;
 
-  // 장애물(페그) 촘촘하게 증가
+  pinballSpeed = 1;
+  pinballSkip = false;
+  const speedBtn = $("#speedPinballAnim");
+  if(speedBtn) speedBtn.textContent = "⏩ 1배속";
+
+  // 촘촘한 장애물(페그) 배열
   const pegs = [];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 10; i++) {
     const cols = i % 2 === 0 ? 11 : 10;
     const spacing = cw / 10;
     const offset = i % 2 === 0 ? 0 : spacing / 2;
     for (let j = 0; j < cols; j++) {
-        pegs.push({ x: j * spacing + offset, y: i * 32 + 50, r: 4 });
+        pegs.push({ x: j * spacing + offset, y: i * 35 + 40, r: 4 });
     }
   }
 
-  // 초기 구슬 (색상을 익명 회색으로 설정)
+  // 익명 회색 공 생성
   const balls = [];
   for (let i = 0; i < 8; i++) {
     const isRed = i < 4;
     balls.push({
         name: isRed ? red[i] : blue[i-4],
         x: (cw/2) + (Math.random() - 0.5) * 50,
-        y: -30 - (i * 30), 
-        vx: (Math.random() - 0.5) * 10,
+        y: -30 - (i * 35), 
+        vx: (Math.random() - 0.5) * 6,
         vy: 0,
-        r: 12,
-        color: '#e2e8f0', // 스포일러 방지 (초기 회색)
-        targetX: isRed ? cw*0.2 : cw*0.8,
+        r: 10,
+        isRed: isRed,
+        revealed: false,
         settled: false,
-        isRed: isRed
+        targetX: isRed ? cw*0.2 : cw*0.8 
     });
   }
 
   let frame = 0;
   if(pinballAnimId) cancelAnimationFrame(pinballAnimId);
 
-  $("#skipPinballAnim").onclick = () => { frame = 9999; }; // 스킵 버튼 클릭 시 즉시 종료
-
   function draw() {
+    if(pinballSkip) {
+        finishPinball();
+        return;
+    }
+
     ctx.clearRect(0, 0, cw, ch);
 
     // 하단 팀 구역
@@ -1211,7 +1241,7 @@ function runPinballAction() {
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
     ctx.fillRect(cw/2 - 2, ch - 80, 4, 80);
 
-    // 페그 그리기
+    // 페그(장애물) 그리기
     ctx.fillStyle = '#64748b';
     pegs.forEach(p => {
         ctx.beginPath();
@@ -1221,81 +1251,108 @@ function runPinballAction() {
 
     let allSettled = true;
 
+    // 물리 엔진 (배속에 따라 여러 번 연산)
+    for(let step = 0; step < pinballSpeed; step++) {
+        balls.forEach(b => {
+            if(!b.settled) {
+                b.vy += 0.4; // 중력
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // 바닥 부근에서 팀 구역으로 서서히 유도
+                if (b.y > ch * 0.4) {
+                    const dx = b.targetX - b.x;
+                    b.vx += dx * 0.03; 
+                }
+
+                b.vx *= 0.96; 
+                b.vy *= 0.98;
+
+                // 페그 충돌 (공이 멈추지 않도록 Jiggle 추가)
+                pegs.forEach(p => {
+                    const dx = b.x - p.x;
+                    const dy = b.y - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < b.r + p.r) {
+                        let angle = Math.atan2(dy, dx);
+                        if (Math.abs(dx) < 0.5 && dy < 0) {
+                            angle += (Math.random() - 0.5) * 0.5; 
+                        }
+                        const speed = Math.max(3, Math.sqrt(b.vx*b.vx + b.vy*b.vy) * 0.75);
+                        b.vx = Math.cos(angle) * speed;
+                        b.vy = Math.sin(angle) * speed;
+                        b.x = p.x + Math.cos(angle) * (b.r + p.r + 1);
+                        b.y = p.y + Math.sin(angle) * (b.r + p.r + 1);
+                    }
+                });
+
+                // 벽 충돌
+                if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
+                if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
+
+                // 중앙 분리대 충돌
+                if (b.y > ch - 80) {
+                    if (b.x > cw/2 - b.r - 2 && b.x < cw/2 + b.r + 2) {
+                        b.vx *= -1;
+                        b.x += b.vx;
+                    }
+                }
+
+                // 색상 및 이름 공개 라인
+                if (b.y > ch - 120) {
+                    b.revealed = true;
+                }
+
+                // 바닥 도착 및 정지
+                if (b.y > ch - b.r - 5) {
+                    b.y = ch - b.r - 5;
+                    b.vy *= -0.3;
+                    b.vx *= 0.5;
+                    if(Math.abs(b.vy) < 1 && Math.abs(b.vx) < 1) {
+                        b.settled = true;
+                    }
+                }
+            }
+        });
+    }
+
+    // 공 렌더링
     balls.forEach(b => {
-        if(!b.settled) {
-            allSettled = false;
-            b.vy += 0.6; // 중력 강화
-            b.x += b.vx;
-            b.y += b.vy;
+        if(!b.settled) allSettled = false;
 
-            // 목적지로 조금씩 당기기 (밑으로 내려올수록)
-            if (b.y > ch * 0.4) {
-                const dx = b.targetX - b.x;
-                b.vx += dx * 0.04; 
-            }
+        const color = b.revealed ? (b.isRed ? '#ef4444' : '#3b82f6') : '#94a3b8';
+        const txtColor = b.revealed ? '#fff' : '#1e293b';
+        const strokeColor = b.revealed ? '#fff' : '#cbd5e1';
 
-            b.vx *= 0.96; 
-            b.vy *= 0.98;
-
-            // 페그 충돌 
-            pegs.forEach(p => {
-                const dx = b.x - p.x;
-                const dy = b.y - p.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < b.r + p.r) {
-                    const angle = Math.atan2(dy, dx);
-                    const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
-                    b.vx = Math.cos(angle) * speed * 0.8; // 더 통통 튀게
-                    b.vy = Math.sin(angle) * speed * 0.8;
-                    b.x = p.x + Math.cos(angle) * (b.r + p.r + 1);
-                    b.y = p.y + Math.sin(angle) * (b.r + p.r + 1);
-                }
-            });
-
-            // 벽면 충돌
-            if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
-            if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
-
-            // 바닥 도달 시 색상 변환 및 멈춤
-            if (b.y > ch - 80) {
-                b.color = b.isRed ? '#ef4444' : '#3b82f6';
-            }
-
-            if (b.y > ch - b.r - 5) {
-                b.y = ch - b.r - 5;
-                b.vy *= -0.3;
-                b.vx *= 0.5;
-                if(Math.abs(b.vy) < 1 && Math.abs(b.vx) < 1) {
-                    b.settled = true;
-                }
-            }
-        }
-
-        // 구슬 그리기
-        ctx.fillStyle = b.color;
+        ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = (b.color === '#e2e8f0') ? '#94a3b8' : '#fff';
+        ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        ctx.fillStyle = (b.color === '#e2e8f0') ? '#1e293b' : '#fff';
+        ctx.fillStyle = txtColor;
         ctx.font = '800 11px Pretendard';
-        ctx.fillText(b.name.substring(0,3), b.x, b.y - 16);
+        ctx.fillText(b.revealed ? b.name.substring(0,3) : '?', b.x, b.y - 14);
     });
 
-    if (!allSettled && frame < 500) { // 최대 프레임 감소로 애니메이션 속도 보장
+    if (!allSettled && frame < 800) {
         frame++;
         pinballAnimId = requestAnimationFrame(draw);
     } else {
-        cancelAnimationFrame(pinballAnimId);
-        $("#pbCanvasWrap").style.display = "none";
-        $("#pbRed").innerHTML = red.join("<br>");
-        $("#pbBlue").innerHTML = blue.join("<br>");
-        $("#pinballResultArea").style.display = "block";
+        finishPinball();
     }
   }
+
+  function finishPinball() {
+    cancelAnimationFrame(pinballAnimId);
+    $("#pbCanvasWrap").style.display = "none";
+    $("#pbRed").innerHTML = red.join("<br>");
+    $("#pbBlue").innerHTML = blue.join("<br>");
+    $("#pinballResultArea").style.display = "block";
+  }
+
   draw();
 }
 
@@ -1305,14 +1362,16 @@ function applyPinballResult() {
   createTab("civil");
   
   const st = window.__state;
-  st.players = window.__tempPinballResult;
+  st.players = [...window.__tempPinballResult];
   st.totals = Object.fromEntries(window.__tempPinballResult.map(n=>[n,0]));
   st.history = [];
   save(st);
 
   $("#pinballModal").classList.add("hidden");
+  showApp();
   render();
-  alert("🎉 새로운 [내전 탭]이 생성되고 8명의 선수가 등록되었습니다!");
+  
+  alert("🎉 새로운 [내전 점수판] 탭이 생성되고 8명의 팀원이 자동 등록되었습니다!");
 }
 
 function copyPinballResult() {
@@ -1324,11 +1383,13 @@ function copyPinballResult() {
   txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n`;
   txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
   
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(txt);
+    return;
+  }
   navigator.clipboard.writeText(txt).then(() => {
-    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
-  }).catch(() => {
-    alert("복사에 실패했습니다.");
-  });
+    alert("결과가 클립보드에 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
+  }).catch(() => fallbackCopyTextToClipboard(txt));
 }
 
 function bind() {
@@ -1378,6 +1439,15 @@ function bind() {
   click("#saveSettingsBtn", saveSettingsAction);
 
   click("#runPinballBtn", runPinballAction);
+  
+  // 핀볼 컨트롤
+  click("#speedPinballAnim", () => {
+    pinballSpeed = pinballSpeed === 1 ? 2 : (pinballSpeed === 2 ? 4 : 1);
+    const btn = $("#speedPinballAnim");
+    if(btn) btn.textContent = `⏩ ${pinballSpeed}배속`;
+  });
+  click("#skipPinballAnim", () => { pinballSkip = true; });
+
   click("#closePinballBtn1", () => { if(pinballAnimId) cancelAnimationFrame(pinballAnimId); $("#pinballModal").classList.add("hidden"); });
   click("#closePinballBtn2", () => { $("#pinballModal").classList.add("hidden"); });
   click("#applyPinballBtn", applyPinballResult);
