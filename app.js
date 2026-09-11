@@ -938,7 +938,7 @@ function buildReceiptHTML(state, perStats, names, conf) {
   return `
     <div class="receipt-inner">
       <div class="receipt-header">
-        <div class="r-title">Hall of Glory Match Result</div>
+        <div class="r-title">Match Result</div>
         <div class="r-subtitle">${currentTabName} · ${dateStr}</div>
       </div>
       ${contentHTML}
