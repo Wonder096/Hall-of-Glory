@@ -4,7 +4,7 @@
   --bg-body: #11141d;
   --bg-card: #1c212e;
   --bg-inner: #151824;
-  --bg-overlay: rgba(17, 20, 29, 0.85);
+  --bg-overlay: rgba(30, 35, 50, 0.75); /* 눈 아프지 않게 배경 연하게 수정 */
   --border: rgba(255, 255, 255, 0.1);
   --border2: rgba(255, 255, 255, 0.05);
   --text: #f0f2f5;
@@ -260,12 +260,20 @@ button.btn-civil:hover { background-color: #dc2626; filter: brightness(1.1); tra
   gap: 6px;
 }
 
-.admin-text-btn:hover {
-  background-color: var(--primary);
+.btn-setting:hover {
+  background-color: #10b981;
   color: #fff;
-  border-color: var(--primary);
+  border-color: #10b981;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+}
+
+.btn-pinball:hover {
+  background-color: #8b5cf6;
+  color: #fff;
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
 }
 
 .card {
