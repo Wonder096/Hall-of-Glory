@@ -980,11 +980,29 @@ function fallbackCopyTextToClipboard(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    alert("결과가 클립보드에 복사되었습니다!\n디스코드나 카카오톡에 붙여넣기(Ctrl+V) 하세요.");
+    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
   } catch (err) {
     alert("복사에 실패했습니다.");
   }
   document.body.removeChild(textArea);
+}
+
+function copyPinballResult() {
+  if(!window.__tempPinballResult || window.__tempPinballResult.length !== 8) return;
+  const r = window.__tempPinballResult.slice(0,4);
+  const b = window.__tempPinballResult.slice(4,8);
+  
+  let txt = `🎲 내전 팀 배정 결과 🎲\n\n`;
+  txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n`;
+  txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
+  
+  if (!navigator.clipboard) {
+    fallbackCopyTextToClipboard(txt);
+    return;
+  }
+  navigator.clipboard.writeText(txt).then(() => {
+    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
+  }).catch(() => fallbackCopyTextToClipboard(txt));
 }
 
 function copyReceiptText() {
@@ -1024,7 +1042,7 @@ function copyReceiptText() {
     return;
   }
   navigator.clipboard.writeText(txt).then(() => {
-    alert("결과가 복사되었습니다!\n디스코드나 카카오톡에 붙여넣기(Ctrl+V) 하세요.");
+    alert("결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
   }).catch(() => fallbackCopyTextToClipboard(txt));
 }
 
@@ -1158,16 +1176,15 @@ function runPinballAction() {
   const names = text.split(/,|\n/).map(s=>s.trim()).filter(Boolean);
   if(names.length !== 8) return alert(`정확히 8명의 닉네임을 입력해주세요. (현재 ${names.length}명)`);
   
-  // 피셔-예이츠 진짜 섞기
   const shuffled = [...names];
   for(let i = shuffled.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  const red = shuffled.slice(0,4);
-  const blue = shuffled.slice(4,8);
+  const redAssigned = shuffled.slice(0, 4);
+  const blueAssigned = shuffled.slice(4, 8);
   
-  window.__tempPinballResult = [...red, ...blue];
+  window.__tempPinballResult = [...redAssigned, ...blueAssigned];
 
   $("#pinballInputArea").style.display = "none";
   $("#pbCanvasWrap").style.display = "block";
@@ -1185,21 +1202,20 @@ function runPinballAction() {
   const speedBtn = $("#speedPinballAnim");
   if(speedBtn) speedBtn.textContent = "⏩ 1배속";
 
-  // 사용자가 요청한 스케치 기반 핀볼 맵 디자인
   const lines = [
-      {x1: 180, y1: -50, x2: 180, y2: 60},
-      {x1: 280, y1: -50, x2: 280, y2: 60},
-      {x1: 180, y1: 60, x2: 60, y2: 160},
-      {x1: 280, y1: 60, x2: 400, y2: 160},
-      {x1: 60, y1: 160, x2: 60, y2: 260},
-      {x1: 400, y1: 160, x2: 400, y2: 260},
-      {x1: 60, y1: 260, x2: 180, y2: 360},
-      {x1: 400, y1: 260, x2: 280, y2: 360},
-      {x1: 230, y1: 140, x2: 150, y2: 210},
-      {x1: 230, y1: 140, x2: 310, y2: 210},
-      {x1: 150, y1: 210, x2: 230, y2: 280},
-      {x1: 310, y1: 210, x2: 230, y2: 280},
-      {x1: 230, y1: 520, x2: 230, y2: 650}
+      {x1: 190, y1: -50, x2: 190, y2: 100}, 
+      {x1: 270, y1: -50, x2: 270, y2: 100}, 
+      {x1: 190, y1: 100, x2: 50,  y2: 220}, 
+      {x1: 270, y1: 100, x2: 410, y2: 220}, 
+      {x1: 50,  y1: 220, x2: 50,  y2: 380}, 
+      {x1: 410, y1: 220, x2: 410, y2: 380}, 
+      {x1: 50,  y1: 380, x2: 170, y2: 460}, 
+      {x1: 410, y1: 380, x2: 290, y2: 460}, 
+      {x1: 230, y1: 200, x2: 130, y2: 290},
+      {x1: 130, y1: 290, x2: 230, y2: 380},
+      {x1: 230, y1: 380, x2: 330, y2: 290},
+      {x1: 330, y1: 290, x2: 230, y2: 200},
+      {x1: 230, y1: 580, x2: 230, y2: 700}
   ];
 
   const pegs = [];
@@ -1208,16 +1224,18 @@ function runPinballAction() {
       let spacing = 460 / 10;
       let offset = (i%2===0) ? spacing : spacing*1.5;
       for(let j=0; j<cols; j++){
-          pegs.push({x: j*spacing + offset, y: 380 + i*35, r: 4});
+          pegs.push({x: j*spacing + offset, y: 480 + i*30, r: 4});
       }
   }
 
-  // 처음에 모두 회색, 이름 없음 (익명)
   const balls = [];
+  let redIdx = 0;
+  let blueIdx = 0;
+
   for (let i = 0; i < 8; i++) {
     const isRed = i < 4;
     balls.push({
-        name: isRed ? red[i] : blue[i-4],
+        name: isRed ? redAssigned[redIdx++] : blueAssigned[blueIdx++],
         x: 230 + (Math.random() - 0.5) * 60, 
         y: -30 - (i * 45), 
         vx: (Math.random() - 0.5) * 5,
@@ -1226,8 +1244,7 @@ function runPinballAction() {
         isRed: isRed,
         revealed: false,
         settled: false,
-        color: '#64748b', 
-        targetX: isRed ? 115 : 345
+        color: '#64748b'
     });
   }
 
@@ -1243,9 +1260,9 @@ function runPinballAction() {
     ctx.clearRect(0, 0, cw, ch);
 
     ctx.fillStyle = 'rgba(239, 68, 68, 0.05)';
-    ctx.fillRect(0, ch - 130, cw/2, 130);
+    ctx.fillRect(0, ch - 120, cw/2, 120);
     ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
-    ctx.fillRect(cw/2, ch - 130, cw/2, 130);
+    ctx.fillRect(cw/2, ch - 120, cw/2, 120);
 
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '800 14px Pretendard';
@@ -1280,15 +1297,13 @@ function runPinballAction() {
                 b.x += b.vx;
                 b.y += b.vy;
 
-                // 타겟 유도 로직 (물리적으로 올바른 바구니에 들어가도록)
-                if (b.y > 400) {
-                    b.vx += (b.isRed ? -0.12 : 0.12);
+                if (b.y > 440) {
+                    b.vx += (b.isRed ? -0.15 : 0.15);
                 }
 
-                // 절대 방어막 (잘못 들어가는 버그 원천 차단)
                 if (b.y > 480) {
-                    if (b.isRed && b.x > 220) { b.x = 220; b.vx = -Math.abs(b.vx)*0.8; }
-                    if (!b.isRed && b.x < 240) { b.x = 240; b.vx = Math.abs(b.vx)*0.8; }
+                    if (b.isRed && b.x > 225) { b.x = 225; b.vx = -Math.abs(b.vx)*0.8; }
+                    if (!b.isRed && b.x < 235) { b.x = 235; b.vx = Math.abs(b.vx)*0.8; }
                 }
 
                 b.vx *= 0.98; 
@@ -1341,7 +1356,7 @@ function runPinballAction() {
                         const dot = b.vx*nx + b.vy*ny;
                         b.vx = (b.vx - 2 * dot * nx) * 0.7;
                         b.vy = (b.vy - 2 * dot * ny) * 0.7;
-                        b.vx += (Math.random() - 0.5) * 1.5; // 끼임 버그 방지
+                        b.vx += (Math.random() - 0.5) * 1.5; 
                     }
                 });
 
@@ -1353,7 +1368,6 @@ function runPinballAction() {
                     b.vy += 2;
                 }
 
-                // 바닥 도착 및 공개
                 if (b.y > 520) {
                     b.revealed = true;
                     b.color = b.isRed ? '#ef4444' : '#3b82f6';
@@ -1388,7 +1402,7 @@ function runPinballAction() {
         }
     });
 
-    if (!allSettled && frame < 900) {
+    if (!allSettled && frame < 1200) {
         frame++;
         pinballAnimId = requestAnimationFrame(draw);
     } else {
@@ -1399,8 +1413,8 @@ function runPinballAction() {
   function finishPinball() {
     cancelAnimationFrame(pinballAnimId);
     $("#pbCanvasWrap").style.display = "none";
-    $("#pbRed").innerHTML = red.join("<br>");
-    $("#pbBlue").innerHTML = blue.join("<br>");
+    $("#pbRed").innerHTML = redAssigned.join("<br>");
+    $("#pbBlue").innerHTML = blueAssigned.join("<br>");
     $("#pinballResultArea").style.display = "block";
   }
 
@@ -1408,7 +1422,7 @@ function runPinballAction() {
 }
 
 function applyPinballResult() {
-  if(!window.__tempPinballResult) return;
+  if(!window.__tempPinballResult || window.__tempPinballResult.length !== 8) return;
   
   createTab("civil");
   const st = window.__state;
@@ -1422,42 +1436,6 @@ function applyPinballResult() {
   render();
   
   alert("🎉 새로운 [내전 점수판] 탭이 생성되고 8명의 팀원이 자동 등록되었습니다!");
-}
-
-function fallbackCopyTextToClipboard(text) {
-  var textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.style.top = "0";
-  textArea.style.left = "0";
-  textArea.style.position = "fixed";
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try {
-    document.execCommand('copy');
-    alert("결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
-  } catch (err) {
-    alert("복사에 실패했습니다.");
-  }
-  document.body.removeChild(textArea);
-}
-
-function copyPinballResult() {
-  if(!window.__tempPinballResult) return;
-  const r = window.__tempPinballResult.slice(0,4);
-  const b = window.__tempPinballResult.slice(4,8);
-  
-  let txt = `🎲 내전 팀 배정 결과 🎲\n\n`;
-  txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n`;
-  txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
-  
-  if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(txt);
-    return;
-  }
-  navigator.clipboard.writeText(txt).then(() => {
-    alert("결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
-  }).catch(() => fallbackCopyTextToClipboard(txt));
 }
 
 function bind() {
@@ -1508,7 +1486,6 @@ function bind() {
 
   click("#runPinballBtn", runPinballAction);
   
-  // 확실하게 작동하는 배속 및 스킵 버튼
   click("#speedPinballAnim", () => {
     pinballSpeed = pinballSpeed === 1 ? 2 : (pinballSpeed === 2 ? 3 : 1);
     const btn = $("#speedPinballAnim");
@@ -1529,7 +1506,7 @@ window.onload = function() {
     bind();
     initTabs();
   } catch(e) {
-    console.error("앱 초기화 에러", e);
+    console.error(e);
     const lv = document.getElementById("landingView");
     if(lv) lv.classList.remove("hidden");
   }
