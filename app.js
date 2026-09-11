@@ -139,13 +139,6 @@ function loadCurrentTab() {
   } else {
     window.__state = getDefaultState(mode);
   }
-  
-  const btnPinball = $("#btnAppPinball");
-  if(btnPinball) {
-      if(mode === "civil") btnPinball.classList.remove("hidden");
-      else btnPinball.classList.add("hidden");
-  }
-
   renderTabs();
   render();
 }
@@ -1140,7 +1133,6 @@ function runPinballAction() {
   const names = text.split(/,|\n/).map(s=>s.trim()).filter(Boolean);
   if(names.length !== 8) return alert(`정확히 8명의 닉네임을 입력해주세요. (현재 ${names.length}명)`);
   
-  // Fisher-Yates Shuffle
   const shuffled = [...names];
   for(let i = shuffled.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -1157,18 +1149,18 @@ function runPinballAction() {
 
   const cvs = $("#pbCanvas");
   const ctx = cvs.getContext("2d");
-  const cw = cvs.clientWidth || 400;
-  const ch = cvs.clientHeight || 320;
-  cvs.width = cw; 
+  const cw = cvs.parentElement.clientWidth || 460;
+  const ch = 400;
+  cvs.width = cw;
   cvs.height = ch;
-  
+
   const pegs = [];
-  for (let i = 0; i < 7; i++) {
-    const cols = i % 2 === 0 ? 8 : 7;
+  for (let i = 0; i < 8; i++) {
+    const cols = i % 2 === 0 ? 9 : 8;
     const spacing = cw / 8;
-    const offset = i % 2 === 0 ? spacing / 2 : spacing;
+    const offset = i % 2 === 0 ? 0 : spacing / 2;
     for (let j = 0; j < cols; j++) {
-        pegs.push({ x: j * spacing + offset, y: i * 35 + 30, r: 5 });
+        pegs.push({ x: j * spacing + offset, y: i * 35 + 40, r: 4 });
     }
   }
 
@@ -1176,13 +1168,15 @@ function runPinballAction() {
   for (let i = 0; i < 8; i++) {
     const isRed = i < 4;
     balls.push({
-        x: (cw/2) + (Math.random() - 0.5) * 40, 
-        y: -30 - (Math.random() * 100), 
-        vx: (Math.random() - 0.5) * 6,
+        name: isRed ? red[i] : blue[i-4],
+        x: (cw/2) + (Math.random() - 0.5) * 20,
+        y: -20 - (i * 40), 
+        vx: (Math.random() - 0.5) * 4,
         vy: 0,
-        r: 10,
+        r: 12,
         color: isRed ? '#ef4444' : '#3b82f6',
-        targetX: isRed ? cw*0.25 : cw*0.75 
+        targetX: isRed ? cw*0.25 : cw*0.75,
+        settled: false
     });
   }
 
@@ -1191,12 +1185,21 @@ function runPinballAction() {
 
   function draw() {
     ctx.clearRect(0, 0, cw, ch);
-    
-    // Draw Center Divider
-    ctx.fillStyle = 'rgba(255,255,255,0.1)';
-    ctx.fillRect(cw/2 - 1, ch - 80, 2, 80);
 
-    // Draw Pegs
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
+    ctx.fillRect(0, ch - 60, cw/2 - 2, 60);
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+    ctx.fillRect(cw/2 + 2, ch - 60, cw/2 - 2, 60);
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '800 14px Pretendard';
+    ctx.textAlign = 'center';
+    ctx.fillText('RED TEAM', cw*0.25, ch - 25);
+    ctx.fillText('BLUE TEAM', cw*0.75, ch - 25);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillRect(cw/2 - 2, ch - 80, 4, 80);
+
     ctx.fillStyle = '#64748b';
     pegs.forEach(p => {
         ctx.beginPath();
@@ -1204,90 +1207,109 @@ function runPinballAction() {
         ctx.fill();
     });
 
-    let allDone = true;
+    let allSettled = true;
+
     balls.forEach(b => {
-        b.vy += 0.3; // Gravity
-        b.x += b.vx;
-        b.y += b.vy;
+        if(!b.settled) {
+            allSettled = false;
+            b.vy += 0.4;
+            b.x += b.vx;
+            b.y += b.vy;
 
-        // Force towards targets when below mid
-        if (b.y > ch * 0.4) {
-            const dx = b.targetX - b.x;
-            b.vx += dx * 0.015; 
-        }
-        
-        b.vx *= 0.98;
-        b.vy *= 0.99;
-
-        // Collision
-        pegs.forEach(p => {
-            const dx = b.x - p.x;
-            const dy = b.y - p.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < b.r + p.r) {
-                const angle = Math.atan2(dy, dx);
-                const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
-                b.vx = Math.cos(angle) * speed * 0.6;
-                b.vy = Math.sin(angle) * speed * 0.6;
-                b.x = p.x + Math.cos(angle) * (b.r + p.r + 1);
-                b.y = p.y + Math.sin(angle) * (b.r + p.r + 1);
+            if (b.y > ch * 0.3) {
+                const dx = b.targetX - b.x;
+                b.vx += dx * 0.025; 
             }
-        });
 
-        // Walls
-        if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
-        if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
+            b.vx *= 0.96; 
+            b.vy *= 0.98;
 
-        if (b.y < ch - b.r) {
-            allDone = false;
-        } else {
-            b.y = ch - b.r;
-            b.vx *= 0.8;
+            pegs.forEach(p => {
+                const dx = b.x - p.x;
+                const dy = b.y - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < b.r + p.r) {
+                    const angle = Math.atan2(dy, dx);
+                    const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                    b.vx = Math.cos(angle) * speed * 0.7;
+                    b.vy = Math.sin(angle) * speed * 0.7;
+                    b.x = p.x + Math.cos(angle) * (b.r + p.r + 1);
+                    b.y = p.y + Math.sin(angle) * (b.r + p.r + 1);
+                }
+            });
+
+            if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
+            if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
+
+            if (b.y > ch - b.r - 5) {
+                b.y = ch - b.r - 5;
+                b.vy *= -0.3;
+                b.vx *= 0.5;
+                if(Math.abs(b.vy) < 1 && Math.abs(b.vx) < 1) {
+                    b.settled = true;
+                }
+            }
         }
 
         ctx.fillStyle = b.color;
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 11px Pretendard';
+        ctx.fillText(b.name.substring(0,3), b.x, b.y - 16);
     });
 
-    if (frame < 300 && !allDone) { 
+    if (!allSettled && frame < 600) {
         frame++;
         pinballAnimId = requestAnimationFrame(draw);
     } else {
         cancelAnimationFrame(pinballAnimId);
-        $("#pbCanvasWrap").style.display = "none";
-        
-        $("#pbRed").innerHTML = red.join("<br>");
-        $("#pbBlue").innerHTML = blue.join("<br>");
-        $("#pinballResultArea").style.display = "block";
+        setTimeout(() => {
+            $("#pbCanvasWrap").style.display = "none";
+            $("#pbRed").innerHTML = red.join("<br>");
+            $("#pbBlue").innerHTML = blue.join("<br>");
+            $("#pinballResultArea").style.display = "block";
+        }, 600);
     }
   }
   draw();
 }
 
 function applyPinballResult() {
-   if(!window.__tempPinballResult) return;
-   const inputs = $$("#playerInputs input");
-   if(inputs.length === 8) {
-       inputs.forEach((inp, idx) => {
-           inp.value = window.__tempPinballResult[idx];
-       });
-   }
-   $("#pinballModal").classList.add("hidden");
+  if(!window.__tempPinballResult) return;
+  
+  createTab("civil");
+  
+  const st = window.__state;
+  st.players = window.__tempPinballResult;
+  st.totals = Object.fromEntries(window.__tempPinballResult.map(n=>[n,0]));
+  st.history = [];
+  save(st);
+
+  $("#pinballModal").classList.add("hidden");
+  render();
+  alert("🎉 내전 탭이 생성되고 8명의 선수가 등록되었습니다!");
 }
 
 function copyPinballResult() {
-   if(!window.__tempPinballResult) return;
-   const r = window.__tempPinballResult.slice(0,4).join(", ");
-   const b = window.__tempPinballResult.slice(4,8).join(", ");
-   const txt = `🔴 RED TEAM: ${r}\n🔵 BLUE TEAM: ${b}`;
-   navigator.clipboard.writeText(txt).then(() => {
-     alert("팀 배정 결과가 복사되었습니다!");
-   });
+  if(!window.__tempPinballResult) return;
+  const r = window.__tempPinballResult.slice(0,4);
+  const b = window.__tempPinballResult.slice(4,8);
+  
+  let txt = `🎲 내전 팀 배정 결과 🎲\n\n`;
+  txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n`;
+  txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
+  
+  navigator.clipboard.writeText(txt).then(() => {
+    alert("팀 배정 결과가 복사되었습니다!");
+  }).catch(() => {
+    alert("복사에 실패했습니다.");
+  });
 }
 
 function bind(){
@@ -1298,7 +1320,6 @@ function bind(){
 
   click("#btnLandingSettings", () => { if(checkAdminAuth()) openSettingsModal(); });
   click("#btnLandingPinball", () => { if(checkAdminAuth()) openPinballModal(); });
-  click("#btnAppPinball", () => { if(checkAdminAuth()) openPinballModal(); });
   
   click("#themeToggle", ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
@@ -1334,12 +1355,12 @@ function bind(){
   click("#closeProfile", () => $("#profileModal").classList.add("hidden"));
 
   click("#openSettings", openSettingsModal);
-  click("#closeSettingsBtn", () => $("#settingsModal").classList.add("hidden"));
+  click("#closeSettingsBtn", () => $("#settingsModal").classList.add("hidden");
   click("#saveSettingsBtn", saveSettingsAction);
 
   click("#runPinballBtn", runPinballAction);
   click("#closePinballBtn1", () => { if(pinballAnimId) cancelAnimationFrame(pinballAnimId); $("#pinballModal").classList.add("hidden"); });
-  click("#closePinballBtn2", () => $("#pinballModal").classList.add("hidden"));
+  click("#closePinballBtn2", () => $("#pinballModal").classList.add("hidden"););
   click("#applyPinballBtn", applyPinballResult);
   click("#copyPinballBtn", copyPinballResult);
 }
@@ -1350,7 +1371,7 @@ window.onload = function() {
     bind();
     initTabs();
   } catch(e) {
-    console.error("앱 초기화 중 오류가 발생했습니다.", e);
+    console.error("앱 초기화 에러", e);
     const lv = document.getElementById("landingView");
     if(lv) lv.classList.remove("hidden");
   }
