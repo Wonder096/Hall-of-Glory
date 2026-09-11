@@ -10,8 +10,8 @@
   --text: #f0f2f5;
   --muted: #9ba4b5;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  --primary: #4f46e5;
-  --primary-hover: #6366f1;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
   --accent: #fbbf24;
   --danger: #ef4444;
   --blue: #3b82f6;
@@ -160,14 +160,14 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 50;
-  background-color: rgba(17, 20, 29, 0.7);
-  backdrop-filter: blur(8px);
+  z-index: 1000;
+  background-color: rgba(17, 20, 29, 0.85);
+  backdrop-filter: blur(5px);
 }
 
 .landing-content {
   position: relative;
-  z-index: 100;
+  z-index: 1001;
   text-align: center;
   background-color: var(--bg-card);
   padding: 60px 50px;
@@ -232,15 +232,15 @@ body {
 }
 
 button.btn-occ { background-color: var(--primary); }
-button.btn-occ:hover { background-color: var(--primary-hover); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4); }
+button.btn-occ:hover { background-color: var(--primary-hover); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4); }
 
 button.btn-civil { background-color: var(--danger); }
 button.btn-civil:hover { background-color: var(--danger); filter: brightness(1.1); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4); }
 
 .landing-admin-box {
-  margin-top: 24px;
+  margin-top: 28px;
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
   align-items: center;
 }
@@ -252,18 +252,20 @@ button.btn-civil:hover { background-color: var(--danger); filter: brightness(1.1
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  padding: 10px 20px;
-  border-radius: 99px;
+  padding: 12px 24px;
+  border-radius: 12px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .admin-text-btn:hover {
   background-color: var(--primary);
   color: #fff;
   border-color: var(--primary);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
 }
 
 .card {
@@ -329,7 +331,7 @@ input {
   font-weight: 600;
   transition: all 0.2s ease;
 }
-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); }
 
 .row { display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 .spacer { flex: 1; }
@@ -366,7 +368,7 @@ button.primary { background-color: var(--primary); }
   font-size: 13px;
   font-weight: 600;
 }
-.pill.success-pill { background-color: rgba(79, 70, 229, 0.15); color: #a5b4fc; border: 1px solid rgba(79, 70, 229, 0.4); }
+.pill.success-pill { background-color: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); }
 
 .kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
 .kpi .box { background-color: var(--bg-inner); border: 1px solid var(--border2); border-radius: var(--radius2); padding: 18px; display: flex; flex-direction: column; }
@@ -436,7 +438,7 @@ html[data-theme="light"] .link-btn:hover { color: rgba(0, 0, 0, 0.9); }
 .set-table { width:100%; border-collapse:collapse; margin-top:10px; }
 .set-table th { padding:10px; border-bottom:1px solid var(--border2); color:var(--muted); font-size:13px; }
 .set-table td { padding:8px; border-bottom:1px solid var(--border2); text-align:center; }
-.set-inp { width:80px; text-align:center; padding:6px; font-size:14px; }
+.set-inp { width:80px; text-align:center; padding:6px; font-size:14px; background:var(--bg-card); color:var(--text); border:1px solid var(--border2); border-radius:6px; }
 .set-row { display:flex; justify-content:space-between; align-items:center; background:var(--bg-inner); padding:10px 16px; border-radius:8px; border:1px solid var(--border2); }
 
 .result-modal-box { max-width: 540px; padding: 24px; }
@@ -497,4 +499,5 @@ html[data-theme="light"] .link-btn:hover { color: rgba(0, 0, 0, 0.9); }
   .receipt-team-score { flex-direction: column; gap: 10px; }
   .r-vs { padding: 10px 0; }
   .profile-grid { grid-template-columns: 1fr; }
+  .landing-admin-box { flex-direction: column; }
 }
