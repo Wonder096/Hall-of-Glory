@@ -242,12 +242,13 @@ button.btn-civil:hover { background-color: var(--danger); filter: brightness(1.1
   display: flex;
   gap: 12px;
   justify-content: center;
+  align-items: center;
 }
 
 .admin-text-btn {
-  background-color: #2a3042;
-  border: 1px solid rgba(255,255,255,0.05);
-  color: #cbd5e1;
+  background-color: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--muted);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -258,10 +259,11 @@ button.btn-civil:hover { background-color: var(--danger); filter: brightness(1.1
 }
 
 .admin-text-btn:hover {
-  background-color: #3b4256;
+  background-color: var(--primary);
   color: #fff;
-  border-color: rgba(255,255,255,0.2);
+  border-color: var(--primary);
   transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
 }
 
 .card {
