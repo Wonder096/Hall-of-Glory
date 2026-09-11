@@ -1140,52 +1140,53 @@ function runPinballAction() {
 }
 
 function bind(){
-  const btnOcc = $("#btnOccMode");
-  const btnCivil = $("#btnCivilMode");
-  if(btnOcc) btnOcc.onclick = () => createTab("occ");
-  if(btnCivil) btnCivil.onclick = () => createTab("civil");
+  const click = (sel, fn) => { const el = $(sel); if(el) el.onclick = fn; };
 
-  $("#btnLandingSettings").onclick = () => { if(checkAdminAuth()) openSettingsModal(); };
-  $("#btnLandingPinball").onclick = () => { if(checkAdminAuth()) openPinballModal(); };
+  click("#btnOccMode", () => createTab("occ"));
+  click("#btnCivilMode", () => createTab("civil"));
+
+  click("#btnLandingSettings", () => { if(checkAdminAuth()) openSettingsModal(); });
+  click("#btnLandingPinball", () => { if(checkAdminAuth()) openPinballModal(); });
   
-  $("#themeToggle").onclick = ()=>{
+  click("#themeToggle", ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     setTheme(cur === "dark" ? "light" : "dark");
-  };
-
-  $("#savePlayers").onclick = registerPlayers;
-  $("#editPlayers").onclick = editPlayers;
-  $("#addRound").onclick = addRound;
-  $("#clearInputs").onclick = clearScoreInputs;
-  $("#undoRound").onclick = undoRound;
-  $("#resetAll").onclick = resetAll;
-  $("#settle").onclick = settle;
-  $("#exportData").onclick = exportData;
-  $("#importData").onclick = importData;
-  $("#importFile").addEventListener("change",(e)=>{
-    const f = e.target.files?.[0];
-    if(!f) return;
-    e.target.value = "";
-    handleImportFile(f);
   });
 
-  const openTerms = $("#openTermsBtn");
-  const closeTerms = $("#closeTermsBtn");
-  const termsModal = $("#termsModal");
-  if(openTerms) openTerms.onclick = (e) => { e.preventDefault(); termsModal.classList.remove("hidden"); };
-  if(closeTerms) closeTerms.onclick = () => termsModal.classList.add("hidden");
+  click("#savePlayers", registerPlayers);
+  click("#editPlayers", editPlayers);
+  click("#addRound", addRound);
+  click("#clearInputs", clearScoreInputs);
+  click("#undoRound", undoRound);
+  click("#resetAll", resetAll);
+  click("#settle", settle);
+  click("#exportData", exportData);
+  click("#importData", importData);
+  
+  const fileInp = $("#importFile");
+  if(fileInp) {
+    fileInp.addEventListener("change",(e)=>{
+      const f = e.target.files?.[0];
+      if(!f) return;
+      e.target.value = "";
+      handleImportFile(f);
+    });
+  }
 
-  $("#closeResult").onclick = () => $("#resultModal").classList.add("hidden");
-  $("#btnExportImage").onclick = exportReceiptImage;
-  $("#btnCopyText").onclick = copyReceiptText;
-  $("#closeProfile").onclick = () => $("#profileModal").classList.add("hidden");
+  click("#openTermsBtn", (e) => { e.preventDefault(); $("#termsModal").classList.remove("hidden"); });
+  click("#closeTermsBtn", () => $("#termsModal").classList.add("hidden"));
 
-  $("#openSettings").onclick = openSettingsModal;
-  $("#closeSettingsBtn").onclick = () => $("#settingsModal").classList.add("hidden");
-  $("#saveSettingsBtn").onclick = saveSettingsAction;
+  click("#closeResult", () => $("#resultModal").classList.add("hidden"));
+  click("#btnExportImage", exportReceiptImage);
+  click("#btnCopyText", copyReceiptText);
+  click("#closeProfile", () => $("#profileModal").classList.add("hidden"));
 
-  $("#runPinballBtn").onclick = runPinballAction;
-  $("#closePinballBtn").onclick = () => $("#pinballModal").classList.add("hidden");
+  click("#openSettings", openSettingsModal);
+  click("#closeSettingsBtn", () => $("#settingsModal").classList.add("hidden"));
+  click("#saveSettingsBtn", saveSettingsAction);
+
+  click("#runPinballBtn", runPinballAction);
+  click("#closePinballBtn", () => $("#pinballModal").classList.add("hidden"));
 }
 
 function init(){
