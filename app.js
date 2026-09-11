@@ -36,7 +36,7 @@ function loadCustomSettings() {
 function saveCustomSettings(newSet) {
   localStorage.setItem("tr_custom_settings_v1", JSON.stringify(newSet));
   loadCustomSettings();
-  if(window.__state && window.__state.history.length > 0) {
+  if(window.__state && window.__state.history && window.__state.history.length > 0) {
     recalculateHistory();
   }
 }
@@ -81,13 +81,17 @@ function initTabs() {
 }
 
 function showLanding() {
-  $("#landingView").classList.remove("hidden");
-  $("#mainAppView").classList.add("hidden");
+  const l = $("#landingView");
+  const m = $("#mainAppView");
+  if(l) l.classList.remove("hidden");
+  if(m) m.classList.add("hidden");
 }
 
 function showApp() {
-  $("#landingView").classList.add("hidden");
-  $("#mainAppView").classList.remove("hidden");
+  const l = $("#landingView");
+  const m = $("#mainAppView");
+  if(l) l.classList.add("hidden");
+  if(m) m.classList.remove("hidden");
 }
 
 function createTab(mode) {
@@ -135,6 +139,13 @@ function loadCurrentTab() {
   } else {
     window.__state = getDefaultState(mode);
   }
+  
+  const btnPinball = $("#btnAppPinball");
+  if(btnPinball) {
+      if(mode === "civil") btnPinball.classList.remove("hidden");
+      else btnPinball.classList.add("hidden");
+  }
+
   renderTabs();
   render();
 }
@@ -1116,27 +1127,167 @@ function saveSettingsAction() {
 
 function openPinballModal() {
   $("#pinballInput").value = "";
+  $("#pinballInputArea").style.display = "block";
+  $("#pbCanvasWrap").style.display = "none";
   $("#pinballResultArea").style.display = "none";
   $("#pinballModal").classList.remove("hidden");
 }
+
+let pinballAnimId = null;
 
 function runPinballAction() {
   const text = $("#pinballInput").value;
   const names = text.split(/,|\n/).map(s=>s.trim()).filter(Boolean);
   if(names.length !== 8) return alert(`정확히 8명의 닉네임을 입력해주세요. (현재 ${names.length}명)`);
   
-  const shuffled = names.sort(() => Math.random() - 0.5);
+  // Fisher-Yates Shuffle
+  const shuffled = [...names];
+  for(let i = shuffled.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   const red = shuffled.slice(0,4);
   const blue = shuffled.slice(4,8);
   
-  $("#pbRed").innerHTML = "섞는 중... 🎲";
-  $("#pbBlue").innerHTML = "섞는 중... 🎲";
-  $("#pinballResultArea").style.display = "block";
+  window.__tempPinballResult = [...red, ...blue];
+
+  $("#pinballInputArea").style.display = "none";
+  $("#pbCanvasWrap").style.display = "block";
+  $("#pinballResultArea").style.display = "none";
+
+  const cvs = $("#pbCanvas");
+  const ctx = cvs.getContext("2d");
+  const cw = cvs.clientWidth || 400;
+  const ch = cvs.clientHeight || 320;
+  cvs.width = cw; 
+  cvs.height = ch;
   
-  setTimeout(() => {
-    $("#pbRed").innerHTML = red.join("<br>");
-    $("#pbBlue").innerHTML = blue.join("<br>");
-  }, 800);
+  const pegs = [];
+  for (let i = 0; i < 7; i++) {
+    const cols = i % 2 === 0 ? 8 : 7;
+    const spacing = cw / 8;
+    const offset = i % 2 === 0 ? spacing / 2 : spacing;
+    for (let j = 0; j < cols; j++) {
+        pegs.push({ x: j * spacing + offset, y: i * 35 + 30, r: 5 });
+    }
+  }
+
+  const balls = [];
+  for (let i = 0; i < 8; i++) {
+    const isRed = i < 4;
+    balls.push({
+        x: (cw/2) + (Math.random() - 0.5) * 40, 
+        y: -30 - (Math.random() * 100), 
+        vx: (Math.random() - 0.5) * 6,
+        vy: 0,
+        r: 10,
+        color: isRed ? '#ef4444' : '#3b82f6',
+        targetX: isRed ? cw*0.25 : cw*0.75 
+    });
+  }
+
+  let frame = 0;
+  if(pinballAnimId) cancelAnimationFrame(pinballAnimId);
+
+  function draw() {
+    ctx.clearRect(0, 0, cw, ch);
+    
+    // Draw Center Divider
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(cw/2 - 1, ch - 80, 2, 80);
+
+    // Draw Pegs
+    ctx.fillStyle = '#64748b';
+    pegs.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    let allDone = true;
+    balls.forEach(b => {
+        b.vy += 0.3; // Gravity
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Force towards targets when below mid
+        if (b.y > ch * 0.4) {
+            const dx = b.targetX - b.x;
+            b.vx += dx * 0.015; 
+        }
+        
+        b.vx *= 0.98;
+        b.vy *= 0.99;
+
+        // Collision
+        pegs.forEach(p => {
+            const dx = b.x - p.x;
+            const dy = b.y - p.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < b.r + p.r) {
+                const angle = Math.atan2(dy, dx);
+                const speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                b.vx = Math.cos(angle) * speed * 0.6;
+                b.vy = Math.sin(angle) * speed * 0.6;
+                b.x = p.x + Math.cos(angle) * (b.r + p.r + 1);
+                b.y = p.y + Math.sin(angle) * (b.r + p.r + 1);
+            }
+        });
+
+        // Walls
+        if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
+        if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
+
+        if (b.y < ch - b.r) {
+            allDone = false;
+        } else {
+            b.y = ch - b.r;
+            b.vx *= 0.8;
+        }
+
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+
+    if (frame < 300 && !allDone) { 
+        frame++;
+        pinballAnimId = requestAnimationFrame(draw);
+    } else {
+        cancelAnimationFrame(pinballAnimId);
+        $("#pbCanvasWrap").style.display = "none";
+        
+        $("#pbRed").innerHTML = red.join("<br>");
+        $("#pbBlue").innerHTML = blue.join("<br>");
+        $("#pinballResultArea").style.display = "block";
+    }
+  }
+  draw();
+}
+
+function applyPinballResult() {
+   if(!window.__tempPinballResult) return;
+   const inputs = $$("#playerInputs input");
+   if(inputs.length === 8) {
+       inputs.forEach((inp, idx) => {
+           inp.value = window.__tempPinballResult[idx];
+       });
+   }
+   $("#pinballModal").classList.add("hidden");
+}
+
+function copyPinballResult() {
+   if(!window.__tempPinballResult) return;
+   const r = window.__tempPinballResult.slice(0,4).join(", ");
+   const b = window.__tempPinballResult.slice(4,8).join(", ");
+   const txt = `🔴 RED TEAM: ${r}\n🔵 BLUE TEAM: ${b}`;
+   navigator.clipboard.writeText(txt).then(() => {
+     alert("팀 배정 결과가 복사되었습니다!");
+   });
 }
 
 function bind(){
@@ -1147,6 +1298,7 @@ function bind(){
 
   click("#btnLandingSettings", () => { if(checkAdminAuth()) openSettingsModal(); });
   click("#btnLandingPinball", () => { if(checkAdminAuth()) openPinballModal(); });
+  click("#btnAppPinball", () => { if(checkAdminAuth()) openPinballModal(); });
   
   click("#themeToggle", ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
@@ -1186,13 +1338,20 @@ function bind(){
   click("#saveSettingsBtn", saveSettingsAction);
 
   click("#runPinballBtn", runPinballAction);
-  click("#closePinballBtn", () => $("#pinballModal").classList.add("hidden"));
+  click("#closePinballBtn1", () => { if(pinballAnimId) cancelAnimationFrame(pinballAnimId); $("#pinballModal").classList.add("hidden"); });
+  click("#closePinballBtn2", () => $("#pinballModal").classList.add("hidden"));
+  click("#applyPinballBtn", applyPinballResult);
+  click("#copyPinballBtn", copyPinballResult);
 }
 
-function init(){
-  initTheme();
-  bind();
-  initTabs();
-}
-
-init();
+window.onload = function() {
+  try {
+    initTheme();
+    bind();
+    initTabs();
+  } catch(e) {
+    console.error("앱 초기화 중 오류가 발생했습니다.", e);
+    const lv = document.getElementById("landingView");
+    if(lv) lv.classList.remove("hidden");
+  }
+};
