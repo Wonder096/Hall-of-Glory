@@ -1129,9 +1129,14 @@ function runPinballAction() {
   const red = shuffled.slice(0,4);
   const blue = shuffled.slice(4,8);
   
-  $("#pbRed").innerHTML = red.join("<br>");
-  $("#pbBlue").innerHTML = blue.join("<br>");
+  $("#pbRed").innerHTML = "섞는 중... 🎲";
+  $("#pbBlue").innerHTML = "섞는 중... 🎲";
   $("#pinballResultArea").style.display = "block";
+  
+  setTimeout(() => {
+    $("#pbRed").innerHTML = red.join("<br>");
+    $("#pbBlue").innerHTML = blue.join("<br>");
+  }, 800);
 }
 
 function bind(){
