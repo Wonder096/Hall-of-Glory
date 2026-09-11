@@ -1050,7 +1050,7 @@ function importData(){
   const input = $("#importFile");
   if(!input) return;
   input.value = "";
-  try{ if(typeof input.showPicker === "function"){ input.showPicker(); return; } }catch{}
+  try{ if(typeof input.showPicker === "function"){ input.showPicker(); return; } }catch(e){}
   input.click();
 }
 
@@ -1087,7 +1087,7 @@ function handleImportFile(file){
       saveCurrentTab();
       render();
       alert("데이터를 성공적으로 불러왔습니다.");
-    }catch{ alert("데이터 불러오기에 실패했습니다."); }
+    }catch(e){ alert("데이터 불러오기에 실패했습니다."); }
   };
   reader.readAsText(file, "utf-8");
 }
@@ -1302,7 +1302,7 @@ function applyPinballResult() {
 
   $("#pinballModal").classList.add("hidden");
   render();
-  alert("🎉 내전 탭이 생성되고 8명의 선수가 등록되었습니다!");
+  alert("🎉 새로운 [내전] 탭이 생성되고 8명이 자동으로 등록되었습니다!");
 }
 
 function copyPinballResult() {
@@ -1321,7 +1321,7 @@ function copyPinballResult() {
   });
 }
 
-function bind(){
+function bind() {
   const click = (sel, fn) => { const el = $(sel); if(el) el.onclick = fn; };
 
   click("#btnOccMode", () => createTab("occ"));
@@ -1331,7 +1331,7 @@ function bind(){
   click("#btnLandingPinball", () => { if(checkAdminAuth()) openPinballModal(); });
   click("#btnAppPinball", () => { if(checkAdminAuth()) openPinballModal(); });
   
-  click("#themeToggle", ()=>{
+  click("#themeToggle", () => {
     const cur = document.documentElement.getAttribute("data-theme") || "dark";
     setTheme(cur === "dark" ? "light" : "dark");
   });
@@ -1348,7 +1348,7 @@ function bind(){
   
   const fileInp = $("#importFile");
   if(fileInp) {
-    fileInp.addEventListener("change",(e)=>{
+    fileInp.addEventListener("change", (e) => {
       const f = e.target.files?.[0];
       if(!f) return;
       e.target.value = "";
@@ -1370,7 +1370,7 @@ function bind(){
 
   click("#runPinballBtn", runPinballAction);
   click("#closePinballBtn1", () => { if(pinballAnimId) cancelAnimationFrame(pinballAnimId); $("#pinballModal").classList.add("hidden"); });
-  click("#closePinballBtn2", () => $("#pinballModal").classList.add("hidden"));
+  click("#closePinballBtn2", () => { $("#pinballModal").classList.add("hidden"); });
   click("#applyPinballBtn", applyPinballResult);
   click("#copyPinballBtn", copyPinballResult);
 }
@@ -1381,7 +1381,7 @@ window.onload = function() {
     bind();
     initTabs();
   } catch(e) {
-    console.error("앱 초기화 중 오류가 발생했습니다.", e);
+    console.error("앱 초기화 에러", e);
     const lv = document.getElementById("landingView");
     if(lv) lv.classList.remove("hidden");
   }
