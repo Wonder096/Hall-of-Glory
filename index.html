@@ -9,18 +9,19 @@
 <body>
   
   <div id="landingView" class="landing-wrap hidden">
-    <div class="landing-admin-links">
-      <button id="btnLandingSettings" class="admin-text-btn">⚙️ 점수 설정</button>
-      <button id="btnLandingPinball" class="admin-text-btn">🎲 내전 핀볼</button>
-    </div>
     <div class="landing-content">
       <h1 class="landing-title">테일즈런너 점령&amp;내전 점수 계산기</h1>
-      <h2 class="landing-subtitle">Hall of Glory</h2>
       <p class="landing-author">제작 : 단졍</p>
       
       <div class="landing-actions">
         <button id="btnOccMode" class="landing-btn btn-occ">점령 점수 계산<br><small>(개인전 4인)</small></button>
         <button id="btnCivilMode" class="landing-btn btn-civil">내전 점수 계산<br><small>(팀전 8인)</small></button>
+      </div>
+
+      <div class="landing-admin-box">
+        <button id="btnLandingSettings" class="admin-text-btn">⚙️ 점수 설정</button>
+        <div class="admin-divider"></div>
+        <button id="btnLandingPinball" class="admin-text-btn">🎲 내전 핀볼</button>
       </div>
     </div>
   </div>
@@ -88,7 +89,7 @@
   <div class="footer-info">입력된 점수와 정보는 이용자 본인의 기기에만 안전하게 저장되며, 외부로 무단 수집되지 않습니다. · 제작: 단졍</div>
   
   <div class="bottom-links">
-    <a href="#" id="openTerms" class="link-btn">이용약관</a>
+    <a href="#" id="openTermsBtn" class="link-btn">이용약관</a>
     <a href="https://tr.rhaon.co.kr/community/ucc/ucc/6114?page=2&title=%ED%8C%AC%EC%95%84%ED%8A%B8&sort=like" target="_blank" class="link-btn">배경 출처 [클릭]</a>
   </div>
 
@@ -102,7 +103,7 @@
         <p><strong>제3조 (데이터 보호 및 초기화)</strong><br>브라우저의 인터넷 사용 기록(캐시)을 삭제할 경우 저장된 데이터가 초기화될 수 있습니다. 중요한 기록은 반드시 하단의 [저장] 기능을 이용해 백업하시길 권장합니다.</p>
       </div>
       <div class="row">
-        <button id="closeTerms" class="primary" style="width: 100%;">확인</button>
+        <button id="closeTermsBtn" class="primary" style="width: 100%;">확인</button>
       </div>
     </div>
   </div>
