@@ -42,7 +42,6 @@
       </div>
       <div id="playerInputs" class="grid-wrap"></div>
       <div class="row">
-        <button id="btnAppPinball" class="primary ghost" style="margin-right:8px;">🎲 핀볼로 섞기</button>
         <button id="savePlayers" class="primary">등록 완료</button>
       </div>
     </section>
@@ -159,11 +158,11 @@
 
   <div id="pinballModal" class="modal hidden">
     <div class="modal-overlay"></div>
-    <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden;">
+    <div class="modal-box" style="max-width:520px; padding:0; overflow:hidden;">
       
-      <!-- 입력 화면 -->
+      <!-- 핀볼 이름 입력 화면 -->
       <div id="pinballInputArea" style="padding:30px;">
-        <h2 style="margin:0 0 16px 0;">🎲 내전 팀 랜덤 섞기</h2>
+        <h2 style="margin:0 0 16px 0;">🎲 내전 핀볼 (팀 섞기)</h2>
         <p style="margin-top:0; font-size:13px; color:var(--muted);">참여할 8명의 닉네임을 쉼표(,) 또는 줄바꿈으로 입력하세요.</p>
         <textarea id="pinballInput" rows="5" style="width:100%; background:var(--bg-inner); color:var(--text); border:1px solid var(--border2); padding:12px; border-radius:8px; outline:none; resize:none; line-height:1.6; font-family:inherit; font-size:15px;"></textarea>
         
@@ -175,13 +174,13 @@
         </div>
       </div>
 
-      <!-- 핀볼 애니메이션 화면 -->
-      <div id="pbCanvasWrap" style="display:none; background:#0f172a; padding-top:20px;">
-        <h3 style="text-align:center; color:#fff; font-size:18px; margin:0 0 10px 0;">운명의 배정 중...</h3>
-        <canvas id="pbCanvas" style="width:100%; height:320px; display:block;"></canvas>
+      <!-- 핀볼 애니메이션 캔버스 -->
+      <div id="pbCanvasWrap" style="display:none; background:#0f172a; padding:30px 20px 20px 20px;">
+        <h3 style="text-align:center; color:#fff; font-size:18px; margin:0 0 16px 0; font-weight:800;">운명의 배정 중... 🎲</h3>
+        <canvas id="pbCanvas" style="width:100%; height:400px; display:block; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--bg-card);"></canvas>
       </div>
 
-      <!-- 결과 화면 -->
+      <!-- 핀볼 배정 결과 화면 -->
       <div id="pinballResultArea" style="display:none; padding:30px;">
         <h2 style="text-align:center; margin:0 0 24px 0; color:var(--accent);">🎉 팀 배정 완료!</h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -196,7 +195,7 @@
         </div>
         
         <div class="row" style="margin-top:24px;">
-          <button id="applyPinballBtn" class="primary" style="width:100%; padding:14px;">✨ 입력칸에 자동 적용</button>
+          <button id="applyPinballBtn" class="primary" style="width:100%; padding:14px; font-size:15px;">✨ [내전 탭] 생성 후 자동 적용하기</button>
         </div>
         <div class="row" style="margin-top:10px; display:flex; gap:10px;">
           <button id="copyPinballBtn" class="ghost" style="flex:1;">결과 텍스트 복사</button>
