@@ -89,19 +89,20 @@
   <div class="footer-info">입력된 점수와 정보는 기기에만 안전하게 보관됩니다. · 제작: 단졍</div>
   
   <div class="bottom-links">
-    <span class="version-tag">업데이트 버전 : v0.1</span>
+    <span style="color: #fbbf24; font-size: 13.5px; font-weight: 800; cursor: default; margin-right: 6px;">업데이트 버전 : v0.1</span>
     <a href="#" id="openTermsBtn" class="link-btn">이용약관</a>
     <a href="https://tr.rhaon.co.kr/community/ucc/ucc/6114?page=2&title=%ED%8C%AC%EC%95%84%ED%8A%B8&sort=like" target="_blank" class="link-btn">배경 출처 [클릭]</a>
   </div>
 
-  <!-- 이용약관 모달 -->
   <div id="termsModal" class="modal hidden">
     <div class="modal-overlay"></div>
     <div class="modal-box">
       <h2>이용약관 및 개인정보 처리방침</h2>
       <div class="modal-body">
         <p><strong>제1조 (목적)</strong><br>본 사이트(Hall of Glory)는 점령전 점수를 편리하게 기록하고 정산하기 위해 제공되는 유틸리티입니다.</p>
-        <p><strong>제2조 (개인정보 처리 및 보안)</strong><br>이용자가 입력하는 닉네임, 점수 등의 모든 데이터는 별도의 서버로 전송되거나 무단으로 수집되지 않습니다. 모든 정보는 브라우저 내부에만 안전하게 보관됩니다.</p>
+        <p><strong>제2조 (개인정보 처리 및 보안)</strong><br>이용자가 입력하는 닉네임, 점수 등의 모든 데이터는 별도의 서버로 전송되거나 무단으로 수집되지 않습니다. 모든 정보는 이용자 기기의 웹 브라우저(Local Storage)에만 안전하게 보관됩니다.</p>
+        <p><strong>제3조 (데이터 보호 및 초기화)</strong><br>브라우저의 인터넷 사용 기록(캐시)을 삭제할 경우 저장된 데이터가 초기화될 수 있습니다. 중요한 기록은 반드시 하단의 [저장] 기능을 이용해 백업하시길 권장합니다.</p>
+        <p><strong>제4조 (책임 제한)</strong><br>본 사이트는 무료로 제공되며, 이용자의 기기 문제나 조작 실수로 인한 데이터 유실에 대해 책임을 지지 않습니다.</p>
       </div>
       <div class="row">
         <button id="closeTermsBtn" class="primary" style="width: 100%;">확인</button>
@@ -109,7 +110,6 @@
     </div>
   </div>
 
-  <!-- 결과 모달 -->
   <div id="resultModal" class="modal hidden">
     <div class="modal-overlay"></div>
     <div class="modal-box result-modal-box">
@@ -123,7 +123,6 @@
     </div>
   </div>
 
-  <!-- 프로필 모달 -->
   <div id="profileModal" class="modal hidden">
     <div class="modal-overlay" id="profileOverlay"></div>
     <div class="modal-box profile-box">
@@ -134,7 +133,6 @@
     </div>
   </div>
 
-  <!-- 설정 모달 -->
   <div id="settingsModal" class="modal hidden">
     <div class="modal-overlay"></div>
     <div class="modal-box" style="max-width:400px;">
@@ -160,12 +158,10 @@
     </div>
   </div>
 
-  <!-- 핀볼 모달 -->
   <div id="pinballModal" class="modal hidden">
     <div class="modal-overlay"></div>
-    <div class="modal-box" style="max-width:520px; padding:0; overflow:hidden;">
+    <div class="modal-box" style="max-width:520px; padding:0; overflow:hidden; max-height:95vh; display:flex; flex-direction:column;">
       
-      <!-- 핀볼 이름 입력 화면 -->
       <div id="pinballInputArea" style="padding:30px;">
         <h2 style="margin:0 0 16px 0;">🎲 내전 핀볼 (팀 섞기)</h2>
         <p style="margin-top:0; font-size:13px; color:var(--muted);">참여할 8명의 닉네임을 쉼표(,) 또는 줄바꿈으로 입력하세요.</p>
@@ -179,8 +175,7 @@
         </div>
       </div>
 
-      <!-- 핀볼 애니메이션 캔버스 -->
-      <div id="pbCanvasWrap" style="display:none; background:#1e293b; padding:20px 20px 20px 20px; position:relative;">
+      <div id="pbCanvasWrap" style="display:none; background:#111827; padding:20px; position:relative; flex-shrink:0;">
         <div style="position:absolute; top:20px; right:20px; z-index:10; display:flex; gap:8px;">
           <button id="speedPinballAnim" class="ghost" style="background:rgba(255,255,255,0.15); border:none; padding:6px 12px; color:#fff; border-radius:6px; font-size:12px; cursor:pointer;">⏩ 1배속</button>
           <button id="skipPinballAnim" class="ghost" style="background:rgba(239,68,68,0.3); border:none; padding:6px 12px; color:#fca5a5; border-radius:6px; font-size:12px; cursor:pointer;">⏭️ 스킵</button>
@@ -189,7 +184,6 @@
         <canvas id="pbCanvas" style="width:100%; height:650px; display:block; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--bg-card);"></canvas>
       </div>
 
-      <!-- 핀볼 배정 결과 화면 -->
       <div id="pinballResultArea" style="display:none; padding:30px; overflow-y:auto;">
         <h2 style="text-align:center; margin:0 0 24px 0; color:var(--accent);">🎉 팀 배정 완료!</h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
