@@ -166,6 +166,8 @@ body {
 }
 
 .landing-content {
+  position: relative;
+  z-index: 100;
   text-align: center;
   background-color: var(--bg-card);
   padding: 60px 50px;
@@ -189,9 +191,14 @@ body {
   color: var(--text);
   letter-spacing: -0.5px;
 }
-
+.landing-subtitle {
+  margin: 10px 0 0;
+  font-size: 18px;
+  color: var(--primary);
+  font-weight: 700;
+}
 .landing-author {
-  margin: 16px 0 40px;
+  margin: 20px 0 40px;
   font-size: 14px;
   color: var(--muted);
   font-weight: 500;
@@ -231,40 +238,30 @@ button.btn-civil { background-color: var(--danger); }
 button.btn-civil:hover { background-color: var(--danger); filter: brightness(1.1); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4); }
 
 .landing-admin-box {
-  margin-top: 32px;
-  padding: 12px 20px;
-  background-color: var(--bg-inner);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 16px;
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
   justify-content: center;
 }
 
 .admin-text-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
+  background-color: #2a3042;
+  border: 1px solid rgba(255,255,255,0.05);
+  color: #cbd5e1;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 99px;
   transition: all 0.2s ease;
-  box-shadow: none;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .admin-text-btn:hover {
-  color: var(--text);
-  background-color: rgba(255,255,255,0.05);
-  transform: none;
-}
-
-.admin-divider {
-  width: 1px;
-  height: 16px;
-  background-color: var(--border2);
+  background-color: #3b4256;
+  color: #fff;
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-1px);
 }
 
 .card {
@@ -353,6 +350,7 @@ button.ghost { background-color: transparent; border: 1px solid var(--border); c
 button.ghost:hover { background-color: var(--border2); }
 button.danger { background-color: var(--danger); }
 button.danger:hover { background-color: var(--danger); filter: brightness(1.1); }
+button.primary { background-color: var(--primary); }
 
 .pill {
   display: inline-flex;
