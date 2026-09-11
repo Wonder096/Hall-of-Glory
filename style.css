@@ -1,10 +1,10 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 
 :root {
-  --bg-body: #1e293b; /* 너무 어둡지 않게 밝게 수정 */
+  --bg-body: #1e293b; 
   --bg-card: #1c212e;
   --bg-inner: #151824;
-  --bg-overlay: rgba(15, 23, 42, 0.7); /* 배경이 시원하게 비치게 투명도 조절 */
+  --bg-overlay: rgba(30, 41, 59, 0.6); 
   --border: rgba(255, 255, 255, 0.1);
   --border2: rgba(255, 255, 255, 0.05);
   --text: #f0f2f5;
@@ -161,7 +161,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  background-color: rgba(15, 23, 42, 0.4); /* 뒷배경 투명도 확보 */
+  background-color: rgba(15, 23, 42, 0.4); 
   backdrop-filter: blur(4px);
 }
 
@@ -257,7 +257,6 @@ button.btn-civil:hover { background-color: #dc2626; filter: brightness(1.1); tra
   gap: 6px;
 }
 
-/* 점수 설정 고정 컬러 (연한 초록) */
 .btn-setting {
   background-color: rgba(16, 185, 129, 0.15) !important;
   color: #34d399 !important;
@@ -270,7 +269,6 @@ button.btn-civil:hover { background-color: #dc2626; filter: brightness(1.1); tra
   box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3) !important;
 }
 
-/* 내전 핀볼 고정 컬러 (연한 보라) */
 .btn-pinball {
   background-color: rgba(168, 85, 247, 0.15) !important;
   color: #c084fc !important;
@@ -437,7 +435,6 @@ input[type="file"].fileHidden { display: none !important; }
 
 .footer-info { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.4); font-size: 12.5px; font-weight: 500; z-index: 900; pointer-events: none; white-space: nowrap; }
 .bottom-links { position: fixed; bottom: 14px; right: 18px; display: flex; gap: 16px; z-index: 1000; align-items: center; }
-.version-tag { color: #fbbf24; font-size: 13.5px; font-weight: 800; cursor: default; margin-right: 6px; }
 .link-btn { color: rgba(255, 255, 255, 0.4); font-size: 12.5px; font-weight: 600; text-decoration: none; transition: color 0.2s ease; cursor: pointer; }
 .link-btn:hover { color: rgba(255, 255, 255, 0.9); }
 html[data-theme="light"] .footer-info, html[data-theme="light"] .link-btn { color: rgba(0, 0, 0, 0.4); }
