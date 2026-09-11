@@ -42,7 +42,6 @@
       </div>
       <div id="playerInputs" class="grid-wrap"></div>
       <div class="row">
-        <button id="btnAppPinball" class="primary ghost" style="margin-right:8px;">🎲 핀볼로 섞기</button>
         <button id="savePlayers" class="primary">등록 완료</button>
       </div>
     </section>
@@ -176,9 +175,10 @@
       </div>
 
       <!-- 핀볼 애니메이션 캔버스 -->
-      <div id="pbCanvasWrap" style="display:none; background:#0f172a; padding:30px 20px 20px 20px;">
+      <div id="pbCanvasWrap" style="display:none; background:#0f172a; padding:30px 20px 20px 20px; position:relative;">
+        <button id="skipPinballAnim" class="ghost" style="position:absolute; top:20px; right:20px; z-index:10; background:rgba(255,255,255,0.1); border:none; padding:6px 12px; color:#fff; border-radius:6px; font-size:12px; cursor:pointer;">스킵 ⏭️</button>
         <h3 style="text-align:center; color:#fff; font-size:18px; margin:0 0 16px 0; font-weight:800;">운명의 배정 중... 🎲</h3>
-        <canvas id="pbCanvas" style="width:100%; height:400px; display:block; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--bg-card);"></canvas>
+        <canvas id="pbCanvas" style="width:100%; height:450px; display:block; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:var(--bg-card);"></canvas>
       </div>
 
       <!-- 핀볼 배정 결과 화면 -->
