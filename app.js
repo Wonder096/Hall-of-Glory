@@ -1206,47 +1206,29 @@ function runPinballAction() {
   if(speedBtn) speedBtn.textContent = "⏩ 1배속";
 
   const lines = [
-      {x1: 180, y1: -50, x2: 180, y2: 60},
-      {x1: 280, y1: -50, x2: 280, y2: 60},
-      {x1: 180, y1: 60, x2: 40, y2: 180},
-      {x1: 280, y1: 60, x2: 420, y2: 180},
-      {x1: 40, y1: 180, x2: 40, y2: 300},
-      {x1: 420, y1: 180, x2: 420, y2: 300},
-      {x1: 40, y1: 300, x2: 180, y2: 420},
-      {x1: 420, y1: 300, x2: 280, y2: 420},
-      {x1: 230, y1: 150, x2: 130, y2: 230},
-      {x1: 130, y1: 230, x2: 230, y2: 310},
-      {x1: 230, y1: 310, x2: 330, y2: 230},
-      {x1: 330, y1: 230, x2: 230, y2: 150},
-      {x1: 230, y1: 530, x2: 210, y2: 560},
-      {x1: 230, y1: 530, x2: 250, y2: 560},
-      {x1: 210, y1: 560, x2: 210, y2: 700},
-      {x1: 250, y1: 560, x2: 250, y2: 700}
+      {x1: 230, y1: 450, x2: 230, y2: 650} 
   ];
 
   const pegs = [];
-  for(let i=0; i<6; i++){
-      let cols = (i%2===0) ? 9 : 8;
-      let spacing = 46;
-      let offset = (i%2===0) ? 46 : 69;
+  for(let i=0; i<9; i++){
+      let cols = (i%2===0) ? 10 : 9;
+      let spacing = 460 / 10;
+      let offset = (i%2===0) ? spacing/2 : spacing;
       for(let j=0; j<cols; j++){
-          let px = j*spacing + offset;
-          let py = 350 + i*35;
-          if(Math.abs(px - 230) < 5) continue; 
-          pegs.push({x: px, y: py, r: 4});
+          pegs.push({x: j*spacing + offset, y: 100 + i*35, r: 4});
       }
   }
 
   const balls = [];
-  const assignedRoles = ['red','red','red','red','blue','blue','blue','blue'];
-  for(let i = assignedRoles.length - 1; i > 0; i--){
+  const roles = ['red','red','red','red','blue','blue','blue','blue'];
+  for(let i = roles.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
-    [assignedRoles[i], assignedRoles[j]] = [assignedRoles[j], assignedRoles[i]];
+    [roles[i], roles[j]] = [roles[j], roles[i]];
   }
 
   for (let i = 0; i < 8; i++) {
     balls.push({
-        x: 230 + (Math.random() - 0.5) * 60, 
+        x: 230 + (Math.random() - 0.5) * 100, 
         y: -30 - (i * 45), 
         vx: (Math.random() - 0.5) * 5,
         vy: 2,
@@ -1255,7 +1237,7 @@ function runPinballAction() {
         revealed: false,
         color: '#64748b', 
         name: '',
-        targetSide: assignedRoles[i]
+        targetSide: roles[i]
     });
   }
 
@@ -1274,12 +1256,6 @@ function runPinballAction() {
     ctx.fillRect(0, ch - 120, cw/2, 120);
     ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
     ctx.fillRect(cw/2, ch - 120, cw/2, 120);
-
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = '800 14px Pretendard';
-    ctx.textAlign = 'center';
-    ctx.fillText('RED TEAM', cw*0.25, ch - 25);
-    ctx.fillText('BLUE TEAM', cw*0.75, ch - 25);
 
     ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 4;
@@ -1308,45 +1284,13 @@ function runPinballAction() {
                 b.x += b.vx;
                 b.y += b.vy;
 
-                if (b.y > 300 && b.y < 450) {
-                    if (b.targetSide === 'red') b.vx -= 0.1;
-                    else if (b.targetSide === 'blue') b.vx += 0.1;
+                if (b.y > 350 && b.y < 480) {
+                    const tx = b.targetSide === 'red' ? 115 : 345;
+                    b.vx += (tx - b.x) * 0.015;
                 }
 
                 b.vx *= 0.98; 
                 b.vy *= 0.98;
-
-                lines.forEach(l => {
-                    const dx = l.x2 - l.x1;
-                    const dy = l.y2 - l.y1;
-                    const lengthSq = dx*dx + dy*dy;
-                    if (lengthSq === 0) return;
-                    let t = ((b.x - l.x1) * dx + (b.y - l.y1) * dy) / lengthSq;
-                    t = Math.max(0, Math.min(1, t));
-                    const closestX = l.x1 + t * dx;
-                    const closestY = l.y1 + t * dy;
-
-                    const distX = b.x - closestX;
-                    const distY = b.y - closestY;
-                    const distSq = distX*distX + distY*distY;
-
-                    if(distSq < b.r * b.r && distSq > 0) {
-                        const dist = Math.sqrt(distSq);
-                        const overlap = b.r - dist;
-                        const nx = distX / dist;
-                        const ny = distY / dist;
-
-                        b.x += nx * overlap;
-                        b.y += ny * overlap;
-
-                        const dot = b.vx * nx + b.vy * ny;
-                        if (dot < 0) {
-                            b.vx = (b.vx - 2 * dot * nx) * 0.6;
-                            b.vy = (b.vy - 2 * dot * ny) * 0.6;
-                            b.vx += (Math.random() - 0.5) * 1.5;
-                        }
-                    }
-                });
 
                 pegs.forEach(p => {
                     const dx = b.x - p.x;
@@ -1362,37 +1306,34 @@ function runPinballAction() {
                         b.y += ny * overlap;
 
                         const dot = b.vx*nx + b.vy*ny;
-                        b.vx = (b.vx - 2 * dot * nx) * 0.8;
-                        b.vy = (b.vy - 2 * dot * ny) * 0.8;
-                        b.vx += (Math.random() - 0.5) * 2.5; 
+                        b.vx = (b.vx - 2 * dot * nx) * 0.7;
+                        b.vy = (b.vy - 2 * dot * ny) * 0.7;
+                        b.vx += (Math.random() - 0.5); 
                     }
                 });
+
+                if (b.y > 480) {
+                    if (b.targetSide === 'red' && b.x > 215) { b.x = 215; b.vx = -Math.abs(b.vx) * 0.5; }
+                    if (b.targetSide === 'blue' && b.x < 245) { b.x = 245; b.vx = Math.abs(b.vx) * 0.5; }
+                }
 
                 if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
                 if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
 
-                if (Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1 && b.y < 500) {
-                    b.vx += (Math.random() - 0.5) * 6;
-                    b.vy += 3;
+                if (b.y > 520 && !b.revealed) {
+                    b.revealed = true;
+                    b.color = b.targetSide === 'red' ? '#ef4444' : '#3b82f6';
+                    b.name = pendingNames.pop();
+                    if(b.targetSide === 'red') redTeamResult.push(b.name);
+                    else blueTeamResult.push(b.name);
                 }
 
-                if (b.y > ch - b.r - 5) {
-                    b.y = ch - b.r - 5;
-                    b.vy *= -0.3;
-                    b.vx *= 0.5;
+                if (b.y > ch - b.r - 35) {
+                    b.y = ch - b.r - 35;
+                    b.vy *= -0.4;
+                    b.vx *= 0.6;
                     if(Math.abs(b.vy) < 1 && Math.abs(b.vx) < 1) {
                         b.settled = true;
-                        b.revealed = true;
-                        if(pendingNames.length > 0) {
-                            b.name = pendingNames.pop();
-                            if(b.targetSide === 'red') {
-                                b.color = '#ef4444';
-                                redTeamResult.push(b.name);
-                            } else {
-                                b.color = '#3b82f6';
-                                blueTeamResult.push(b.name);
-                            }
-                        }
                     }
                 }
             }
@@ -1415,6 +1356,12 @@ function runPinballAction() {
             ctx.fillText(b.name.substring(0,3), b.x, b.y - 14);
         }
     });
+
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '800 16px Pretendard';
+    ctx.textAlign = 'center';
+    ctx.fillText('RED TEAM', cw*0.25, ch - 10);
+    ctx.fillText('BLUE TEAM', cw*0.75, ch - 10);
 
     if (!allSettled && frame < 1500) {
         frame++;
