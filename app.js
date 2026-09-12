@@ -1184,7 +1184,10 @@ function runPinballAction() {
   
   redTeamResult = [];
   blueTeamResult = [];
-  window.__tempPinballResult = [];
+  
+  const redAssigned = pendingNames.slice(0, 4);
+  const blueAssigned = pendingNames.slice(4, 8);
+  window.__tempPinballResult = [...redAssigned, ...blueAssigned];
 
   $("#pinballInputArea").style.display = "none";
   $("#pbCanvasWrap").style.display = "block";
@@ -1192,7 +1195,7 @@ function runPinballAction() {
 
   const cvs = $("#pbCanvas");
   const ctx = cvs.getContext("2d");
-  const cw = 400;
+  const cw = 460;
   const ch = 650;
   cvs.width = cw;
   cvs.height = ch;
@@ -1203,50 +1206,48 @@ function runPinballAction() {
   if(speedBtn) speedBtn.textContent = "⏩ 1배속";
 
   const lines = [
-      {x1: 160, y1: -50, x2: 160, y2: 60}, 
-      {x1: 240, y1: -50, x2: 240, y2: 60}, 
-      {x1: 160, y1: 60, x2: 60, y2: 160}, 
-      {x1: 240, y1: 60, x2: 340, y2: 160}, 
-      {x1: 60, y1: 160, x2: 60, y2: 300}, 
-      {x1: 340, y1: 160, x2: 340, y2: 300}, 
-      {x1: 60, y1: 300, x2: 160, y2: 400}, 
-      {x1: 340, y1: 300, x2: 240, y2: 400}, 
-      {x1: 200, y1: 180, x2: 120, y2: 260},
-      {x1: 120, y1: 260, x2: 200, y2: 340},
-      {x1: 200, y1: 340, x2: 280, y2: 260},
-      {x1: 280, y1: 260, x2: 200, y2: 180},
-      {x1: 200, y1: 520, x2: 200, y2: 700}
+      {x1: 180, y1: -50, x2: 180, y2: 60},
+      {x1: 280, y1: -50, x2: 280, y2: 60},
+      {x1: 180, y1: 60, x2: 60, y2: 160},
+      {x1: 280, y1: 60, x2: 400, y2: 160},
+      {x1: 60, y1: 160, x2: 60, y2: 260},
+      {x1: 400, y1: 160, x2: 400, y2: 260},
+      {x1: 60, y1: 260, x2: 180, y2: 360},
+      {x1: 400, y1: 260, x2: 280, y2: 360},
+      {x1: 230, y1: 140, x2: 150, y2: 210},
+      {x1: 230, y1: 140, x2: 310, y2: 210},
+      {x1: 150, y1: 210, x2: 230, y2: 280},
+      {x1: 310, y1: 210, x2: 230, y2: 280}
   ];
 
   const pegs = [];
   for(let i=0; i<4; i++){
       let cols = (i%2===0) ? 9 : 8;
-      let spacing = 400 / 10;
+      let spacing = 460 / 10;
       let offset = (i%2===0) ? spacing : spacing*1.5;
       for(let j=0; j<cols; j++){
-          pegs.push({x: j*spacing + offset, y: 420 + i*30, r: 4});
+          pegs.push({x: j*spacing + offset, y: 380 + i*35, r: 4});
       }
   }
 
   const balls = [];
   for (let i = 0; i < 8; i++) {
+    const isRed = i < 4;
     balls.push({
-        x: 200 + (Math.random() - 0.5) * 60, 
+        name: isRed ? redAssigned[i] : blueAssigned[i-4],
+        x: 230 + (Math.random() - 0.5) * 60, 
         y: -30 - (i * 45), 
         vx: (Math.random() - 0.5) * 5,
         vy: 2,
         r: 10,
+        isRed: isRed,
+        revealed: false,
         settled: false,
-        name: null,
-        side: null,
-        color: '#64748b',
-        windCount: 0,
-        windCooldown: 0
+        color: '#64748b'
     });
   }
 
   let frame = 0;
-  let activeLines = [...lines];
   if(pinballAnimId) cancelAnimationFrame(pinballAnimId);
 
   function draw() {
@@ -1268,10 +1269,13 @@ function runPinballAction() {
     ctx.fillText('RED TEAM', cw*0.25, ch - 25);
     ctx.fillText('BLUE TEAM', cw*0.75, ch - 25);
 
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillRect(cw/2 - 2, ch - 130, 4, 130);
+
     ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
-    activeLines.forEach(l => {
+    lines.forEach(l => {
         ctx.beginPath();
         ctx.moveTo(l.x1, l.y1);
         ctx.lineTo(l.x2, l.y2);
@@ -1288,39 +1292,31 @@ function runPinballAction() {
     let allSettled = true;
 
     for(let step = 0; step < pinballSpeed; step++) {
-        
-        if (redTeamResult.length >= 4) {
-            let hasRedBlock = activeLines.some(l => l.x1 === 0 && l.y1 === 510);
-            if (!hasRedBlock) {
-                activeLines.push({x1: 0, y1: 510, x2: 200, y2: 560});
-            }
-        }
-        if (blueTeamResult.length >= 4) {
-            let hasBlueBlock = activeLines.some(l => l.x1 === 400 && l.y1 === 510);
-            if (!hasBlueBlock) {
-                activeLines.push({x1: 400, y1: 510, x2: 200, y2: 560});
-            }
-        }
-
         balls.forEach(b => {
             if(!b.settled) {
                 allSettled = false;
                 b.vy += 0.35; 
-                
-                if (b.windCooldown > 0) b.windCooldown--;
-                if (b.y > 400 && b.y < 430 && b.vy > 0 && b.windCount < 2 && b.windCooldown <= 0) {
-                    b.vy = -12;
-                    b.windCount++;
-                    b.windCooldown = 60;
+                b.vx *= 0.98; 
+                b.vy *= 0.98;
+
+                if (b.y > 350) {
+                    const targetX = b.isRed ? 115 : 345;
+                    b.vx += (targetX - b.x) * 0.005;
+                }
+
+                if (b.y > 450) {
+                    b.vx += (b.isRed ? -0.5 : 0.5);
                 }
 
                 b.x += b.vx;
                 b.y += b.vy;
 
-                b.vx *= 0.98; 
-                b.vy *= 0.98;
+                if (b.y > 480) {
+                    if (b.isRed && b.x > 220) { b.x = 220; b.vx = -Math.abs(b.vx); }
+                    if (!b.isRed && b.x < 240) { b.x = 240; b.vx = Math.abs(b.vx); }
+                }
 
-                activeLines.forEach(l => {
+                lines.forEach(l => {
                     const dx = l.x2 - l.x1;
                     const dy = l.y2 - l.y1;
                     const lengthSq = dx*dx + dy*dy;
@@ -1347,7 +1343,6 @@ function runPinballAction() {
                         if (dot < 0) {
                             b.vx = (b.vx - 2 * dot * nx) * 0.6;
                             b.vy = (b.vy - 2 * dot * ny) * 0.6;
-                            b.vx += (Math.random() - 0.5); 
                         }
                     }
                 });
@@ -1375,27 +1370,22 @@ function runPinballAction() {
                 if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
                 if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
 
-                if (Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1 && b.y < 500) {
+                if (Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1 && b.y < 480) {
                     b.vx += (Math.random() - 0.5) * 4;
                     b.vy += 2;
+                }
+
+                if (b.y > 520 && !b.revealed) {
+                    b.revealed = true;
+                    b.color = b.isRed ? '#ef4444' : '#3b82f6';
                 }
 
                 if (b.y > ch - b.r - 5) {
                     b.y = ch - b.r - 5;
                     b.vy *= -0.3;
                     b.vx *= 0.5;
-                    if(Math.abs(b.vy) < 1 && Math.abs(b.vx) < 1 && !b.name) {
+                    if(Math.abs(b.vy) < 1 && Math.abs(b.vx) < 1) {
                         b.settled = true;
-                        b.name = pendingNames.pop();
-                        if (b.x < cw/2) {
-                            b.side = 'red';
-                            b.color = '#ef4444';
-                            redTeamResult.push(b.name);
-                        } else {
-                            b.side = 'blue';
-                            b.color = '#3b82f6';
-                            blueTeamResult.push(b.name);
-                        }
                     }
                 }
             }
@@ -1408,11 +1398,11 @@ function runPinballAction() {
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.strokeStyle = b.name ? '#fff' : '#475569';
+        ctx.strokeStyle = b.revealed ? '#fff' : '#475569';
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        if (b.name) {
+        if (b.revealed) {
             ctx.fillStyle = '#fff';
             ctx.font = '800 11px Pretendard';
             ctx.fillText(b.name.substring(0,3), b.x, b.y - 14);
@@ -1430,16 +1420,8 @@ function runPinballAction() {
   function finishPinball() {
     cancelAnimationFrame(pinballAnimId);
     $("#pbCanvasWrap").style.display = "none";
-    
-    while(pendingNames.length > 0) {
-        if(redTeamResult.length < 4) redTeamResult.push(pendingNames.pop());
-        else blueTeamResult.push(pendingNames.pop());
-    }
-    
-    window.__tempPinballResult = [...redTeamResult, ...blueTeamResult];
-    
-    $("#pbRed").innerHTML = redTeamResult.join("<br>");
-    $("#pbBlue").innerHTML = blueTeamResult.join("<br>");
+    $("#pbRed").innerHTML = redAssigned.join("<br>");
+    $("#pbBlue").innerHTML = blueAssigned.join("<br>");
     $("#pinballResultArea").style.display = "block";
   }
 
@@ -1461,42 +1443,6 @@ function applyPinballResult() {
   render();
   
   alert("🎉 새로운 [내전 점수판] 탭이 생성되고 8명의 팀원이 자동 등록되었습니다!");
-}
-
-function fallbackCopyTextToClipboard(text) {
-  var textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.style.top = "0";
-  textArea.style.left = "0";
-  textArea.style.position = "fixed";
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try {
-    document.execCommand('copy');
-    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
-  } catch (err) {
-    alert("복사에 실패했습니다.");
-  }
-  document.body.removeChild(textArea);
-}
-
-function copyPinballResult() {
-  if(!window.__tempPinballResult || window.__tempPinballResult.length !== 8) return;
-  const r = window.__tempPinballResult.slice(0,4);
-  const b = window.__tempPinballResult.slice(4,8);
-  
-  let txt = `🎲 내전 팀 배정 결과 🎲\n\n`;
-  txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n`;
-  txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
-  
-  if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(txt);
-    return;
-  }
-  navigator.clipboard.writeText(txt).then(() => {
-    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
-  }).catch(() => fallbackCopyTextToClipboard(txt));
 }
 
 function bind() {
