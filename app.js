@@ -224,8 +224,8 @@ function renderTabs() {
 }
 
 function safeInt(v, d=0){
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) ? n : d;
+  const parsed = parseInt(v, 10);
+  return isNaN(parsed) ? d : parsed;
 }
 
 function nowISO(){
@@ -269,17 +269,13 @@ function ensureTotals(state){
 function parseToken(token) {
   const t = String(token || "").trim().toLowerCase().replace(/\s+/g, "");
   if (!t) throw new Error("입력이 비어 있어요");
-  
   const m = t.match(/^(\d+)(.*)$/);
   if (!m) throw new Error("등수 숫자가 필요해요");
-  
   const rank = typeof safeInt === "function" ? safeInt(m[1], 0) : parseInt(m[1], 10) || 0;
   if (rank < 1 || rank > 8) throw new Error("등수는 1~8만 가능해요");
-  
   const rest = m[2] || "";
   const re = rest.includes("ㄹ") || rest.includes("리") || rest.includes("리타");
   const x = rest.includes("ㅊ") || rest.includes("초") || rest.includes("초사");
-  
   return { rank, re, x };
 }
 
@@ -302,104 +298,46 @@ function escapeHTML(s){
   return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
-function summarizeRanksFull(tags){
-  const goals = {};
-  const res = {};
-  const xs = {};
-  for(const r of tags){
-    if(!r || r === "-") continue;
-    const s = String(r).trim();
-    const m = s.match(/^(\d+)(.*)$/);
-    if(!m) continue;
-    const rk = safeInt(m[1], 0);
-    const suf = m[2] || "";
-    if(rk < 1 || rk > 8) continue;
-    if(suf === "") goals[rk] = (goals[rk]||0) + 1;
-    else if(suf === "리") res[rk] = (res[rk]||0) + 1;
-    else if(suf === "초") xs[rk] = (xs[rk]||0) + 1;
-  }
-  const parts = [];
-  const gk = Object.keys(goals).map(Number).sort((a,b)=>a-b);
-  const rk = Object.keys(res).map(Number).sort((a,b)=>a-b);
-  const xk = Object.keys(xs).map(Number).sort((a,b)=>a-b);
-
-  if(gk.length) parts.push(gk.map(k=>`${k}등×${goals[k]}`).join("·"));
-  if(rk.length) parts.push(`리타(${rk.map(k=>`${k}리×${res[k]}`).join(", ")})`);
-  if(xk.length) parts.push(`초사(${xk.map(k=>`${k}초×${xs[k]}`).join(", ")})`);
-  return parts.length ? parts.join(" - ") : "-";
-}
-
-function computePerPlayerTags(state){
-  const names = normalizeNames(state);
-  const per = {};
-  for(const n of names) per[n] = [];
-  for(const row of (state.history || [])){
-    const parsed = row?.parsed;
-    if(!Array.isArray(parsed) || parsed.length !== names.length) continue;
-    for(let i=0;i<names.length;i++){
-      const name = names[i];
-      const p = parsed[i];
-      const rk = safeInt(p?.rank, 0);
-      const re = !!p?.re;
-      const x = !!p?.x;
-      if(rk < 1 || rk > 8){ per[name].push("-"); continue; }
-      if(x) per[name].push(`${rk}초`);
-      else if(re) per[name].push(`${rk}리`);
-      else per[name].push(`${rk}`);
-    }
-  }
-  return per;
-}
-
-function computePerPlayerStats(state, perTags){
+function computePerPlayerStats(state){
   const names = normalizeNames(state);
   const out = {};
   for(const name of names){
-    const tags = perTags[name] || [];
-    let bestRank = 99;
-    let bestCount = 0;
-    let reCount = 0;
-    let xCount = 0;
-    let goalCount = 0;
-    let totalRank = 0;
-    let validRanks = 0;
-    const rawHistory = [];
-
-    for(const t of tags){
-      if(!t || t === "-") continue;
-      const m = String(t).match(/^(\d+)(.*)$/);
-      if(!m) continue;
-      const rk = safeInt(m[1], 0);
-      const suf = m[2] || "";
-      
-      rawHistory.push({ rank: rk, suf: suf });
-
-      if(rk >= 1 && rk <= 8){
-        totalRank += rk;
-        validRanks += 1;
-        if(rk < bestRank){ bestRank = rk; bestCount = 1; }
-        else if(rk === bestRank){ bestCount += 1; }
-      }
-      if(suf === "리") reCount += 1;
-      else if(suf === "초") xCount += 1;
-      else goalCount += 1;
-    }
-
-    if(bestRank === 99) bestRank = 0;
-    const avgRank = validRanks > 0 ? (totalRank / validRanks).toFixed(1) : 0;
-    
-    out[name] = { 
-      bestRank, bestCount, goalCount, reCount, xCount, avgRank, rawHistory,
-      summary: summarizeRanksFull(tags) 
-    };
+    out[name] = { bestRank:99, bestCount:0, reCount:0, xCount:0, goalCount:0, totalRank:0, validRanks:0, matches:[] };
+  }
+  (state.history||[]).forEach((h, idx) => {
+    const mapName = h.map || "미지정";
+    names.forEach((name, pIdx) => {
+      const p = h.parsed[pIdx];
+      if(!p) return;
+      const rk = safeInt(p.rank, 0);
+      if(rk < 1 || rk > 8) return;
+      const st = out[name];
+      st.totalRank += rk;
+      st.validRanks += 1;
+      if(rk < st.bestRank){ st.bestRank = rk; st.bestCount = 1; }
+      else if(rk === st.bestRank){ st.bestCount += 1; }
+      if(p.x) st.xCount += 1;
+      else if(p.re) st.reCount += 1;
+      else st.goalCount += 1;
+      st.matches.push({
+        matchNum: idx + 1,
+        map: mapName,
+        rank: rk,
+        re: p.re,
+        x: p.x
+      });
+    });
+  });
+  for(const name of names){
+    if(out[name].bestRank === 99) out[name].bestRank = 0;
+    out[name].avgRank = out[name].validRanks > 0 ? (out[name].totalRank / out[name].validRanks).toFixed(1) : 0;
   }
   return out;
 }
 
 window.showPlayerProfile = function(name) {
   const state = window.__state;
-  const perTags = computePerPlayerTags(state);
-  const perStats = computePerPlayerStats(state, perTags);
+  const perStats = computePerPlayerStats(state);
   const st = perStats[name];
   if(!st) return;
 
@@ -407,23 +345,17 @@ window.showPlayerProfile = function(name) {
   const names = normalizeNames(state);
   const isMvp = names.reduce((max, n) => Math.max(max, safeInt(state.totals[n], 0)), 0) === score;
   
+  const recent30 = st.matches.slice(-30);
   let recentHTML = "";
-  const recent = st.rawHistory.slice(-5);
-  if(recent.length === 0) {
-    recentHTML = `<span style="color:var(--muted); font-size:13px;">기록 없음</span>`;
+  if(recent30.length === 0){
+    recentHTML = `<div style="color:var(--muted); font-size:13px;">기록 없음</div>`;
   } else {
-    recentHTML = recent.map(r => {
-      let c = "rank-circ-red";
-      if(r.suf === "초") c = "rank-circ-gray";
-      else if(r.rank === 1) c = "rank-circ-gold";
-      else if(r.rank <= 3) c = "rank-circ-blue";
-      else if(r.rank <= 5) c = "rank-circ-green";
-      
-      let txt = r.rank;
-      if(r.suf === "리") txt = "R";
-      if(r.suf === "초") txt = "X";
-      return `<div class="rank-circle ${c}">${txt}</div>`;
-    }).join("");
+    recentHTML = `<ul class="profile-match-list">` + recent30.map(m => {
+      let suf = "";
+      if(m.x) suf = " (초사)";
+      else if(m.re) suf = " (리타)";
+      return `<li>${m.matchNum} -(${m.map}) ${m.rank}등${suf}</li>`;
+    }).reverse().join("") + `</ul>`;
   }
 
   const html = `
@@ -449,8 +381,8 @@ window.showPlayerProfile = function(name) {
       </div>
     </div>
     <div class="profile-recent">
-      <div class="profile-t" style="margin-bottom:12px;">최근 5경기 폼</div>
-      <div style="display:flex; gap:10px; justify-content:center;">${recentHTML}</div>
+      <div class="profile-t" style="margin-bottom:12px;">최근 경기 폼 (최대 30판)</div>
+      ${recentHTML}
     </div>
   `;
 
@@ -545,6 +477,7 @@ function applyFinishedLock(){
   $$("#scoreInputs input").forEach(i=>{ i.disabled = done; });
   $("#addRound").disabled = done;
   $("#clearInputs").disabled = done;
+  $("#mapSelect").disabled = done;
 }
 
 function renderPlayerInputFields(wrapId, state, isScore = false) {
@@ -670,6 +603,7 @@ function render(){
         if(state.history.length > 0) {
             const logs = state.history.map((h, idx) => {
               let vsText = "";
+              const mapName = h.map || "맵 미지정";
               if (conf.isTeam) {
                 let rSum = 0, bSum = 0;
                 for(let i=0; i<4; i++) rSum += safeInt(h.delta[state.players[i]], 0);
@@ -686,8 +620,8 @@ function render(){
 
               const lines = linesData.map(obj => {
                 let rankStr = `${obj.rank}등`;
-                if(obj.re) rankStr = `${obj.rank}리`;
-                else if(obj.x) rankStr = `${obj.rank}초`;
+                if(obj.re) rankStr = `${obj.rank}ㄹ`;
+                else if(obj.x) rankStr = `${obj.rank}ㅊ`;
                 const c = conf.isTeam ? (obj.pIdx < 4 ? "log-red" : "log-blue") : "";
                 return `<span class="${c}">${obj.p} ㅣ ${rankStr} ㅣ ${obj.delta}점</span>`;
               }).join("<br>");
@@ -696,7 +630,7 @@ function render(){
               <div class="log-entry">
                 <div class="log-head">
                   <div class="log-title-group">
-                    <div class="log-badge">${idx + 1}판</div>
+                    <div class="log-badge">${idx + 1}판 [ ${mapName} ]</div>
                     ${vsText}
                   </div>
                   <button class="del-btn" onclick="deleteRound(${idx})">삭제</button>
@@ -711,23 +645,7 @@ function render(){
     }
 
     applyFinishedLock();
-    const settleBtn = $("#settle");
-    if(settleBtn){
-      if(state.history.length > 0){
-        settleBtn.classList.add("primary","settleReady");
-        settleBtn.classList.remove("ghost");
-      }else{
-        settleBtn.classList.remove("primary","settleReady");
-        if(!settleBtn.classList.contains("ghost")) settleBtn.classList.add("ghost");
-      }
-    }
-  }
-}
-
-function registerPlayers(){
-  const state = window.__state;
-  const conf = getModeConfig(state.mode);
-  const inputs = $$("#playerInputs input");
+    const settleBtn = $("#settle");     if(settleBtn){       if(state.history.length > 0){         settleBtn.classList.add("primary","settleReady");         settleBtn.classList.remove("ghost");       }else{         settleBtn.classList.remove("primary","settleReady");         if(!settleBtn.classList.contains("ghost")) settleBtn.classList.add("ghost");       }     }   } }  function registerPlayers(){   const state = window.__state;   const conf = getModeConfig(state.mode);   const inputs = $$("#playerInputs input");
   const names = inputs.map(i=>i.value.trim()).slice(0, conf.rosterSize);
 
   if(names.some(n=>!n)) return alert("닉네임을 모두 입력해주세요.");
@@ -786,7 +704,7 @@ function addRound(){
   if(!isRegistered(state)) return alert("먼저 선수를 등록해주세요.");
   if(isFinished(state)) return alert("30판이 모두 종료되었습니다.");
 
-  const inputs = $$("#scoreInputs input");
+  const mapSelect = $("#mapSelect");   if(mapSelect && !mapSelect.value) {     alert("맵을 먼저 골라주세요!");     mapSelect.focus();     return;   }    const inputs = $$("#scoreInputs input");
   const tokens = inputs.map(i=>i.value.trim());
 
   let parsed;
@@ -817,6 +735,7 @@ function addRound(){
 
   state.history.push({
     ts: nowISO(),
+    map: mapSelect ? mapSelect.value : "",
     tokens,
     parsed: parsed.map(p=>({rank:p.rank,re:p.re,x:p.x})),
     delta
@@ -916,7 +835,7 @@ function buildReceiptHTML(state, perStats, names, conf) {
           ${redRows.map((r,i) => `
             <div class="r-row">
               <div class="r-rank">${i+1}</div>
-              <div class="r-name">${escapeHTML(r.name)} ${r.score === leader ? '<span class="r-mvp">MVP</span>' : ''}</div>
+              <div class="r-name">${escapeHTML(r.name)}${r.score === leader ? '<span class="r-mvp">MVP</span>' : ''}</div>
               <div class="r-score">${r.score}</div>
             </div>
           `).join("")}
@@ -925,7 +844,7 @@ function buildReceiptHTML(state, perStats, names, conf) {
           ${blueRows.map((r,i) => `
             <div class="r-row">
               <div class="r-rank">${i+1}</div>
-              <div class="r-name">${escapeHTML(r.name)} ${r.score === leader ? '<span class="r-mvp">MVP</span>' : ''}</div>
+              <div class="r-name">${escapeHTML(r.name)}${r.score === leader ? '<span class="r-mvp">MVP</span>' : ''}</div>
               <div class="r-score">${r.score}</div>
             </div>
           `).join("")}
@@ -938,7 +857,7 @@ function buildReceiptHTML(state, perStats, names, conf) {
         ${rows.map((r,i) => `
           <div class="r-row ${i===0?'r-first':''}">
             <div class="r-rank">${i+1}</div>
-            <div class="r-name">${escapeHTML(r.name)} ${i===0 ? '<span class="r-mvp">MVP</span>' : ''}</div>
+            <div class="r-name">${escapeHTML(r.name)}${i===0 ? '<span class="r-mvp">MVP</span>' : ''}</div>
             <div class="r-score">${r.score}</div>
           </div>
         `).join("")}
@@ -966,8 +885,7 @@ function settle(){
   ensureTotals(state);
   const conf = getModeConfig(state.mode);
   const names = normalizeNames(state);
-  const perTags = computePerPlayerTags(state);
-  const perStats = computePerPlayerStats(state, perTags);
+  const perStats = computePerPlayerStats(state);
 
   $("#receiptArea").innerHTML = buildReceiptHTML(state, perStats, names, conf);
   $("#resultModal").classList.remove("hidden");
@@ -997,8 +915,8 @@ function copyPinballResult() {
   const b = window.__tempPinballResult.slice(4,8);
   
   let txt = `🎲 내전 팀 배정 결과 🎲\n\n`;
-  txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}. ${x}`).join('\n')}\n\n`;
-  txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
+  txt += `🔴 RED TEAM\n${r.map((x,i)=>`${i+1}.${x}`).join('\n')}\n\n`;
+  txt += `🔵 BLUE TEAM\n${b.map((x,i)=>`${i+1}.${x}`).join('\n')}`;
   
   if (!navigator.clipboard) {
     fallbackCopyTextToClipboard(txt);
@@ -1210,16 +1128,16 @@ function runPinballAction() {
   if(speedBtn) speedBtn.textContent = "⏩ 1배속";
 
   const lines = [
-      {x1: 230, y1: 450, x2: 230, y2: 650} 
+      {x1: 230, y1: 530, x2: 230, y2: 650} 
   ];
 
   const pegs = [];
-  for(let i=0; i<9; i++){
+  for(let i=0; i<12; i++){
       let cols = (i%2===0) ? 10 : 9;
-      let spacing = 460 / 10;
-      let offset = (i%2===0) ? spacing/2 : spacing;
+      let spacing = 46;
+      let offset = (i%2===0) ? 23 : 46;
       for(let j=0; j<cols; j++){
-          pegs.push({x: j*spacing + offset, y: 100 + i*35, r: 4});
+          pegs.push({x: j*spacing + offset, y: 80 + i*35, r: 4});
       }
   }
 
@@ -1232,7 +1150,7 @@ function runPinballAction() {
 
   for (let i = 0; i < 8; i++) {
     balls.push({
-        x: 230 + (Math.random() - 0.5) * 100, 
+        x: 230 + (Math.random() - 0.5) * 150, 
         y: -30 - (i * 45), 
         vx: (Math.random() - 0.5) * 5,
         vy: 2,
@@ -1288,7 +1206,7 @@ function runPinballAction() {
                 b.x += b.vx;
                 b.y += b.vy;
 
-                if (b.y > 350 && b.y < 480) {
+                if (b.y > 450 && b.y < 530) {
                     const tx = b.targetSide === 'red' ? 115 : 345;
                     b.vx += (tx - b.x) * 0.015;
                 }
@@ -1310,13 +1228,13 @@ function runPinballAction() {
                         b.y += ny * overlap;
 
                         const dot = b.vx*nx + b.vy*ny;
-                        b.vx = (b.vx - 2 * dot * nx) * 0.7;
-                        b.vy = (b.vy - 2 * dot * ny) * 0.7;
+                        b.vx = (b.vx - 2 * dot * nx) * 0.75;
+                        b.vy = (b.vy - 2 * dot * ny) * 0.75;
                         b.vx += (Math.random() - 0.5); 
                     }
                 });
 
-                if (b.y > 480) {
+                if (b.y > 530) {
                     if (b.targetSide === 'red' && b.x > 215) { b.x = 215; b.vx = -Math.abs(b.vx) * 0.5; }
                     if (b.targetSide === 'blue' && b.x < 245) { b.x = 245; b.vx = Math.abs(b.vx) * 0.5; }
                 }
@@ -1324,7 +1242,7 @@ function runPinballAction() {
                 if (b.x < b.r) { b.x = b.r; b.vx *= -0.8; }
                 if (b.x > cw - b.r) { b.x = cw - b.r; b.vx *= -0.8; }
 
-                if (b.y > 520 && !b.revealed) {
+                if (b.y > 540 && !b.revealed) {
                     b.revealed = true;
                     b.color = b.targetSide === 'red' ? '#ef4444' : '#3b82f6';
                     b.name = pendingNames.pop();
