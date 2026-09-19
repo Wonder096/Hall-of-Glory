@@ -274,8 +274,8 @@ function parseToken(token){
   const rank = safeInt(m[1], 0);
   if(rank < 1 || rank > 8) throw new Error("등수는 1~8만 가능해요");
   const rest = m[2] || "";
-  const re = rest.includes("re") || rest.includes("리") || rest.includes("리타");
-  const x  = rest.includes("x")  || rest.includes("초") || rest.includes("초사");
+  const re = rest.includes("re") || rest.includes("리") || rest.includes("리타");|| rest.includes("ㄹ");
+  const x  = rest.includes("x")  || rest.includes("초") || rest.includes("초사");|| rest.includes("ㅊ");
   return { rank, re, x };
 }
 
