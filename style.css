@@ -4,7 +4,7 @@
   --bg-body: #1e293b; 
   --bg-card: #1c212e;
   --bg-inner: #151824;
-  --bg-overlay: rgba(30, 41, 59, 0.7); 
+  --bg-overlay: rgba(30, 41, 59, 0.6); 
   --border: rgba(255, 255, 255, 0.1);
   --border2: rgba(255, 255, 255, 0.05);
   --text: #f0f2f5;
@@ -346,6 +346,9 @@ input {
 }
 input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); }
 
+.map-select { width:100%; background:var(--bg-inner); border:1px solid var(--border2); color:var(--text); border-radius:var(--radius2); padding:14px; font-size:15px; font-weight:600; outline:none; margin-bottom:16px; cursor:pointer; }
+.map-select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,0.25); }
+
 .row { display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 .spacer { flex: 1; }
 
@@ -486,6 +489,13 @@ html[data-theme="light"] .link-btn:hover { color: rgba(0, 0, 0, 0.9); }
 .profile-t { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
 .profile-v { font-size: 18px; font-weight: 800; color: var(--text); }
 .profile-recent { background: var(--bg-inner); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; text-align: center; }
+
+.profile-match-list { list-style:none; padding:0; margin:0; max-height:300px; overflow-y:auto; text-align:left; font-size:14px; font-weight:600; color:var(--text); }
+.profile-match-list li { padding:8px 12px; border-bottom:1px solid var(--border2); display:flex; gap:8px; align-items:center; }
+.profile-match-list li:last-child { border-bottom:none; }
+.profile-match-list::-webkit-scrollbar { width:6px; }
+.profile-match-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:4px; }
+
 .rank-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; flex-shrink: 0; }
 .rank-circ-gold { background-color: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
 .rank-circ-blue { background-color: #3b82f6; }
