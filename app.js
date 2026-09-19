@@ -21,6 +21,24 @@ const $$ = (s)=>Array.from(document.querySelectorAll(s));
 let tabs = [];
 let activeTabId = null;
 
+window.updateAddBtnState = function() {
+  const state = window.__state;
+  const btn = $("#addRound");
+  if(!btn) return;
+  if(!state || !isRegistered(state) || isFinished(state)) {
+    btn.disabled = true;
+    return;
+  }
+  const mapSelect = $("#mapSelect");
+  const inputs = $$("#scoreInputs input");
+  if(!mapSelect || inputs.length === 0) return;
+  
+  const allFilled = inputs.every(i => i.value.trim() !== "");
+  const mapSelected = mapSelect.value.trim() !== "";
+  
+  btn.disabled = !(allFilled && mapSelected);
+};
+
 function loadCustomSettings() {
   const custom = localStorage.getItem("tr_custom_settings_v1");
   if(custom) {
@@ -351,10 +369,10 @@ window.showPlayerProfile = function(name) {
     recentHTML = `<div style="color:var(--muted); font-size:13px;">기록 없음</div>`;
   } else {
     recentHTML = `<ul class="profile-match-list">` + recent30.map(m => {
-      let suf = "";
-      if(m.x) suf = " (초사)";
-      else if(m.re) suf = " (리타)";
-      return `<li>${m.matchNum} -(${m.map}) ${m.rank}등${suf}</li>`;
+      let rankStr = `${m.rank}등`;
+      if (m.x) rankStr = `${m.rank}등 초사`;
+      else if (m.re) rankStr = `${m.rank}등 리타`;
+      return `<li>${m.matchNum}번째 판 - (${m.map}) - ${rankStr}</li>`;
     }).reverse().join("") + `</ul>`;
   }
 
@@ -470,14 +488,14 @@ function clearScoreInputs(){
   $$("#scoreInputs input").forEach(i=>{ i.value = ""; });
   const first = $("#scoreInputs input");
   if(first) first.focus();
+  if(window.updateAddBtnState) window.updateAddBtnState();
 }
 
 function applyFinishedLock(){
   const done = isFinished(window.__state);
   $$("#scoreInputs input").forEach(i=>{ i.disabled = done; });
-  $("#addRound").disabled = done;
   $("#clearInputs").disabled = done;
-  $("#mapSelect").disabled = done;
+  if($("#mapSelect")) $("#mapSelect").disabled = done;
 }
 
 function renderPlayerInputFields(wrapId, state, isScore = false) {
@@ -512,12 +530,13 @@ function renderPlayerInputFields(wrapId, state, isScore = false) {
         inp.placeholder = i<4 ? `레드 ${i+1} 닉네임` : `블루 ${i-3} 닉네임`;
         inp.value = state.players[i] || "";
       } else {
+        inp.addEventListener("input", window.updateAddBtnState);
         inp.addEventListener("keydown",(e)=>{
           if(e.key === "Enter"){
             e.preventDefault();
             const list = $$("#scoreInputs input");
             if(i < list.length - 1) list[i+1].focus();
-            else addRound();
+            else if(!$("#addRound").disabled) addRound();
           }
           if(e.key === "Escape"){
             e.preventDefault();
@@ -550,12 +569,13 @@ function renderPlayerInputFields(wrapId, state, isScore = false) {
         inp.placeholder = `${["첫번째","두번째","세번째","네번째"][i]} 닉네임`;
         inp.value = state.players[i] || "";
       } else {
+        inp.addEventListener("input", window.updateAddBtnState);
         inp.addEventListener("keydown",(e)=>{
           if(e.key === "Enter"){
             e.preventDefault();
             const list = $$("#scoreInputs input");
             if(i < list.length - 1) list[i+1].focus();
-            else addRound();
+            else if(!$("#addRound").disabled) addRound();
           }
           if(e.key === "Escape"){
             e.preventDefault();
@@ -620,10 +640,11 @@ function render(){
 
               const lines = linesData.map(obj => {
                 let rankStr = `${obj.rank}등`;
-                if(obj.re) rankStr = `${obj.rank}ㄹ`;
-                else if(obj.x) rankStr = `${obj.rank}ㅊ`;
+                let failMark = "";
+                if(obj.re) { rankStr = `${obj.rank}등 리타`; failMark = ` <span style="font-size:12px; margin-left:4px;">❌</span>`; }
+                else if(obj.x) { rankStr = `${obj.rank}등 초사`; failMark = ` <span style="font-size:12px; margin-left:4px;">❌</span>`; }
                 const c = conf.isTeam ? (obj.pIdx < 4 ? "log-red" : "log-blue") : "";
-                return `<span class="${c}">${obj.p} ㅣ ${rankStr} ㅣ ${obj.delta}점</span>`;
+                return `<span class="${c}">${obj.p} ㅣ ${rankStr} ㅣ ${obj.delta}점${failMark}</span>`;
               }).join("<br>");
 
               return `
@@ -645,6 +666,8 @@ function render(){
     }
 
     applyFinishedLock();
+    if(window.updateAddBtnState) window.updateAddBtnState();
+    
     const settleBtn = $("#settle");     if(settleBtn){       if(state.history.length > 0){         settleBtn.classList.add("primary","settleReady");         settleBtn.classList.remove("ghost");       }else{         settleBtn.classList.remove("primary","settleReady");         if(!settleBtn.classList.contains("ghost")) settleBtn.classList.add("ghost");       }     }   } }  function registerPlayers(){   const state = window.__state;   const conf = getModeConfig(state.mode);   const inputs = $$("#playerInputs input");
   const names = inputs.map(i=>i.value.trim()).slice(0, conf.rosterSize);
 
@@ -741,6 +764,7 @@ function addRound(){
     delta
   });
 
+  if(mapSelect) mapSelect.value = "";
   clearScoreInputs();
   save(state);
   render();
@@ -902,7 +926,7 @@ function fallbackCopyTextToClipboard(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    alert("결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
+    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
   } catch (err) {
     alert("복사에 실패했습니다.");
   }
@@ -1047,10 +1071,7 @@ function handleImportFile(file){
 }
 
 function checkAdminAuth() {
-  const pwd = prompt("임시 비밀번호를 입력해주세요.");
-  if(pwd === "0814") return true;
-  if(pwd !== null) alert("비밀번호가 일치하지 않습니다.");
-  return false;
+  return true;
 }
 
 function openSettingsModal() {
@@ -1389,6 +1410,9 @@ function bind() {
   click("#closePinballBtn2", () => { $("#pinballModal").classList.add("hidden"); });
   click("#applyPinballBtn", applyPinballResult);
   click("#copyPinballBtn", copyPinballResult);
+  
+  const mapSel = $("#mapSelect");
+  if(mapSel) mapSel.addEventListener("change", window.updateAddBtnState);
 }
 
 window.onload = function() {
