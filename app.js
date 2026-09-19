@@ -266,16 +266,20 @@ function ensureTotals(state){
   state.totals = t;
 }
 
-function parseToken(token){
-  const t = String(token||"").trim().toLowerCase().replace(/\s+/g,"");
-  if(!t) throw new Error("입력이 비어 있어요");
+function parseToken(token) {
+  const t = String(token || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (!t) throw new Error("입력이 비어 있어요");
+  
   const m = t.match(/^(\d+)(.*)$/);
-  if(!m) throw new Error("등수 숫자가 필요해요");
-  const rank = safeInt(m[1], 0);
-  if(rank < 1 || rank > 8) throw new Error("등수는 1~8만 가능해요");
+  if (!m) throw new Error("등수 숫자가 필요해요");
+  
+  const rank = typeof safeInt === "function" ? safeInt(m[1], 0) : parseInt(m[1], 10) || 0;
+  if (rank < 1 || rank > 8) throw new Error("등수는 1~8만 가능해요");
+  
   const rest = m[2] || "";
   const re = rest.includes("ㄹ") || rest.includes("리") || rest.includes("리타");
-  const x  = rest.includes("ㅊ")  || rest.includes("초") || rest.includes("초사");
+  const x = rest.includes("ㅊ") || rest.includes("초") || rest.includes("초사");
+  
   return { rank, re, x };
 }
 
