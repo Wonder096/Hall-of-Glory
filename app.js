@@ -30,11 +30,16 @@ window.updateAddBtnState = function() {
     return;
   }
   const mapSelect = $("#mapSelect");
+  const rMapSelect = $("#randomMapSelect");
   const inputs = $$("#scoreInputs input");
   if(!mapSelect || inputs.length === 0) return;
   
   const allFilled = inputs.every(i => i.value.trim() !== "");
-  const mapSelected = mapSelect.value.trim() !== "";
+  let mapSelected = mapSelect.value.trim() !== "";
+  
+  if (mapSelect.value === "랜덤") {
+    mapSelected = rMapSelect && rMapSelect.value.trim() !== "";
+  }
   
   btn.disabled = !(allFilled && mapSelected);
 };
@@ -496,6 +501,7 @@ function applyFinishedLock(){
   $$("#scoreInputs input").forEach(i=>{ i.disabled = done; });
   $("#clearInputs").disabled = done;
   if($("#mapSelect")) $("#mapSelect").disabled = done;
+  if($("#randomMapSelect")) $("#randomMapSelect").disabled = done;
 }
 
 function renderPlayerInputFields(wrapId, state, isScore = false) {
@@ -727,7 +733,8 @@ function addRound(){
   if(!isRegistered(state)) return alert("먼저 선수를 등록해주세요.");
   if(isFinished(state)) return alert("30판이 모두 종료되었습니다.");
 
-  const mapSelect = $("#mapSelect");   if(mapSelect && !mapSelect.value) {     alert("맵을 먼저 골라주세요!");     mapSelect.focus();     return;   }    const inputs = $$("#scoreInputs input");
+  const mapSelect = $("#mapSelect");
+  const rMapSelect = $("#randomMapSelect");      if(mapSelect && !mapSelect.value) {     alert("맵을 먼저 골라주세요!");     mapSelect.focus();     return;   }   if(mapSelect && mapSelect.value === "랜덤") {     if(rMapSelect && !rMapSelect.value) {       alert("랜덤으로 나온 맵을 선택해주세요!");       rMapSelect.focus();       return;     }   }    const inputs = $$("#scoreInputs input");
   const tokens = inputs.map(i=>i.value.trim());
 
   let parsed;
@@ -756,15 +763,25 @@ function addRound(){
     state.totals[name] = safeInt(state.totals[name],0) + safeInt(delta[name],0);
   }
 
+  let finalMap = mapSelect ? mapSelect.value : "";
+  if (finalMap === "랜덤") {
+    finalMap = `랜덤 - ${rMapSelect.value}`;
+  }
+
   state.history.push({
     ts: nowISO(),
-    map: mapSelect ? mapSelect.value : "",
+    map: finalMap,
     tokens,
     parsed: parsed.map(p=>({rank:p.rank,re:p.re,x:p.x})),
     delta
   });
 
   if(mapSelect) mapSelect.value = "";
+  if(rMapSelect) {
+    rMapSelect.value = "";
+    rMapSelect.classList.add("hidden");
+  }
+  
   clearScoreInputs();
   save(state);
   render();
@@ -1412,7 +1429,25 @@ function bind() {
   click("#copyPinballBtn", copyPinballResult);
   
   const mapSel = $("#mapSelect");
-  if(mapSel) mapSel.addEventListener("change", window.updateAddBtnState);
+  const rMapSel = $("#randomMapSelect");
+  
+  if(mapSel) {
+    mapSel.addEventListener("change", (e) => {
+      if(e.target.value === "랜덤") {
+        if(rMapSel) rMapSel.classList.remove("hidden");
+      } else {
+        if(rMapSel) {
+          rMapSel.classList.add("hidden");
+          rMapSel.value = "";
+        }
+      }
+      if(window.updateAddBtnState) window.updateAddBtnState();
+    });
+  }
+  
+  if(rMapSel) {
+    rMapSel.addEventListener("change", window.updateAddBtnState);
+  }
 }
 
 window.onload = function() {
