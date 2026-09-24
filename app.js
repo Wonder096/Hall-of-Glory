@@ -945,7 +945,7 @@ function fallbackCopyTextToClipboard(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    alert("결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
+    alert("팀 배정 결과가 복사되었습니다!\n디스코드나 카카오톡에 바로 붙여넣기(Ctrl+V) 하세요.");
   } catch (err) {
     alert("복사에 실패했습니다.");
   }
@@ -1433,9 +1433,11 @@ function bind() {
   click("#applyPinballBtn", applyPinballResult);
   click("#copyPinballBtn", copyPinballResult);
   
-  document.addEventListener("change", (e) => {
-    if(e.target.id === "mapSelect") {
-      const rMapSel = document.getElementById("randomMapSelect");
+  const mapSel = document.getElementById("mapSelect");
+  const rMapSel = document.getElementById("randomMapSelect");
+  
+  if(mapSel) {
+    mapSel.onchange = function(e) {
       if(e.target.value === "랜덤") {
         if(rMapSel) rMapSel.classList.remove("hidden");
       } else {
@@ -1445,11 +1447,14 @@ function bind() {
         }
       }
       if(window.updateAddBtnState) window.updateAddBtnState();
-    }
-    if(e.target.id === "randomMapSelect") {
+    };
+  }
+  
+  if(rMapSel) {
+    rMapSel.onchange = function() {
       if(window.updateAddBtnState) window.updateAddBtnState();
-    }
-  });
+    };
+  }
 }
 
 window.onload = function() {
