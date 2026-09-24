@@ -365,7 +365,7 @@ button {
   transition: all 0.2s ease;
 }
 button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background-color: var(--bg-inner); border: 1px solid var(--border2); color: var(--muted); box-shadow: none; }
 button.ghost { background-color: transparent; border: 1px solid var(--border); color: var(--text); box-shadow: none; }
 button.ghost:hover { background-color: var(--border2); }
 button.danger { background-color: var(--danger); }
