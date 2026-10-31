@@ -731,7 +731,23 @@ function render(){
     applyFinishedLock();
     if(window.updateAddBtnState) window.updateAddBtnState();
     
-    const settleBtn = $("#settle");     if(settleBtn){       if(state.history.length > 0){         settleBtn.classList.add("primary","settleReady");         settleBtn.classList.remove("ghost");       }else{         settleBtn.classList.remove("primary","settleReady");         if(!settleBtn.classList.contains("ghost")) settleBtn.classList.add("ghost");       }     }   } }  function registerPlayers(){   const state = window.__state;   const conf = getModeConfig(state.mode);   const inputs = $$("#playerInputs input");
+    const settleBtn = $("#settle");
+    if(settleBtn){
+      if(state.history.length > 0){
+        settleBtn.classList.add("primary","settleReady");
+        settleBtn.classList.remove("ghost");
+      }else{
+        settleBtn.classList.remove("primary","settleReady");
+        if(!settleBtn.classList.contains("ghost")) settleBtn.classList.add("ghost");
+      }
+    }
+  }
+}
+
+function registerPlayers(){
+  const state = window.__state;
+  const conf = getModeConfig(state.mode);
+  const inputs = $$("#playerInputs input");
   const names = inputs.map(i=>i.value.trim()).slice(0, conf.rosterSize);
 
   if(names.some(n=>!n)) return alert("닉네임을 모두 입력해주세요.");
@@ -835,7 +851,7 @@ function addRound(){
 
   let finalMap = mapSelect ? mapSelect.value : "";
   if (finalMap === "랜덤") {
-    finalMap = `랜덤 (초심/하코) - ${rMapSelect.value}`;
+    finalMap = `랜덤 - ${rMapSelect.value}`;
   }
 
   state.history.push({
