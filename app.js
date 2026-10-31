@@ -791,7 +791,20 @@ function addRound(){
   if(isFinished(state)) return alert("30판이 모두 종료되었습니다.");
 
   const mapSelect = $("#mapSelect");
-  const rMapSelect = $("#randomMapSelect");   if(mapSelect && !mapSelect.value) {     alert("맵을 먼저 골라주세요!");     mapSelect.focus();     return;   }   if(mapSelect && mapSelect.value === "랜덤") {     if(rMapSelect && !rMapSelect.value) {       alert("랜덤으로 나온 맵을 선택해주세요!");       rMapSelect.focus();       return;     }   }   const inputs = $$("#scoreInputs input");
+  const rMapSelect = $("#randomMapSelect");
+  if(mapSelect && !mapSelect.value) {
+    alert("맵을 먼저 골라주세요!");
+    mapSelect.focus();
+    return;
+  }
+  if(mapSelect && mapSelect.value === "랜덤") {
+    if(rMapSelect && !rMapSelect.value) {
+      alert("랜덤으로 나온 맵을 선택해주세요!");
+      rMapSelect.focus();
+      return;
+    }
+  }
+  const inputs = $$("#scoreInputs input");
   const tokens = inputs.map(i=>i.value.trim());
 
   let parsed;
@@ -822,7 +835,7 @@ function addRound(){
 
   let finalMap = mapSelect ? mapSelect.value : "";
   if (finalMap === "랜덤") {
-    finalMap = `랜덤 - ${rMapSelect.value}`;
+    finalMap = `랜덤 (초심/하코) - ${rMapSelect.value}`;
   }
 
   state.history.push({
