@@ -9,7 +9,7 @@ const DEFAULT_SETTINGS = {
   totalGames: 30,
   maxPerGame: 1044,
   goalPoints: {1:288, 2:270, 3:252, 4:234, 5:216, 6:198, 7:180, 8:162},
-  retaPoints: {1:144, 2:135, 3:126, 4:116, 5:108, 6:99, 7:90, 8:81},
+  retaPoints: {1:144, 2:135, 3:126, 4:117, 5:108, 6:99, 7:90, 8:81},
   xPoints: 0
 };
 
